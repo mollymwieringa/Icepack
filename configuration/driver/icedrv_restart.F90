@@ -258,7 +258,7 @@
       use icedrv_state, only: trcr_depend, aice, vice, vsno, trcr
       use icedrv_state, only: aice0, aicen, vicen, vsnon, trcrn, aice_init
       use icedrv_state, only: trcr_base, nt_strata, n_trcr_strata
-      use icedrv_restart_shared, only: restart_format
+      use icedrv_restart_shared, only: restart_format, runtype_startup
       use icedrv_arrays_column, only: dhsn, ffracn, hin_max
       use icedrv_arrays_column, only: first_ice, first_ice_real
       use icepack_tracers, only: ntrcr, nbtrcr
@@ -268,8 +268,9 @@
       ! local variables
 
       integer (kind=int_kind) :: &
-         i, k              ! counting indices
-
+         i, k,hold_istep0              ! counting indices
+      real (kind=dbl_kind) :: &
+         hold_time,hold_time_forc
       integer (kind=int_kind) :: &
          nt_Tsfc, nt_sice, nt_qice, nt_qsno
 
@@ -308,7 +309,14 @@
 
       if (restart_format == 'bin') then
          open(nu_restart,file=filename,form='unformatted')
-         read (nu_restart) istep0,time,time_forc
+         read (nu_restart) hold_istep0,hold_time,hold_time_forc
+         if (.not. runtype_startup) then
+            istep0 = hold_istep0
+            time = hold_time
+            time_forc = hold_time_forc
+            istep1 = istep0
+            write(nu_diag,*) 'Restart read at istep=',istep0,time,time_forc
+         endif
       else if (restart_format == 'nc') then
 #ifdef USE_NETCDF
          ! set this to .true. for netcdf diagnostic output
@@ -318,9 +326,16 @@
          if (status /= nf90_noerr) call icedrv_system_abort(string=subname//'Couldnt open netcdf file', &
                                     file=__FILE__,line=__LINE__)
 
-         status = nf90_get_att(ncid, nf90_global, 'istep1', istep0)
-         status = nf90_get_att(ncid, nf90_global, 'time', time)
-         status = nf90_get_att(ncid, nf90_global, 'time_forc', time_forc)
+         status = nf90_get_att(ncid, nf90_global, 'istep1', hold_istep0)
+         status = nf90_get_att(ncid, nf90_global, 'time', hold_time)
+         status = nf90_get_att(ncid, nf90_global, 'time_forc', hold_time_forc)
+         if (.not. runtype_startup) then
+            istep0 = hold_istep0
+            time = hold_time
+            time_forc = hold_time_forc
+            istep1 = istep0
+            write(nu_diag,*) 'Restart read at istep=',istep0,time,time_forc
+         endif
 #else
          call icedrv_system_abort(string=subname//' ERROR: restart_format = "nc" requires USE_NETCDF',file=__FILE__,line=__LINE__)
 #endif
@@ -331,7 +346,7 @@
 
       write(nu_diag,*) 'Restart read at istep=',istep0,time,time_forc
 
-      istep1 = istep0
+      !istep1 = istep0
 
       !-----------------------------------------------------------------
       ! state variables

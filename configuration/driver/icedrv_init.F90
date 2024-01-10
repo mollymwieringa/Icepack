@@ -64,6 +64,7 @@
       use icedrv_calendar, only: npt, dt, ndtd, days_per_year, use_leap_years
       use icedrv_history, only: history_format
       use icedrv_restart_shared, only: restart, restart_dir, restart_file, restart_format
+      use icedrv_restart_shared, only: runtype_startup
       use icedrv_flux, only: l_mpond_fresh, cpl_bgc
       use icedrv_flux, only: default_season
       use icedrv_forcing, only: precip_units,    fyear_init,      ycycle
@@ -93,7 +94,7 @@
          a_rapid_mode, Rac_rapid_mode, aspect_rapid_mode, dSdt_slow_mode, &
          phi_c_slow_mode, phi_i_mushy, kalg, emissivity, floediam, hfrazilmin, &
          rsnw_fall, rsnw_tmax, rhosnew, rhosmin, rhosmax, &
-         windmin, drhosdwind, snwlvlfac
+         windmin, drhosdwind, snwlvlfac, rhoi, rhos, dragio, hi_ssl, hs_ssl
 
       integer (kind=int_kind) :: ktherm, kstrength, krdg_partic, krdg_redist, &
          natmiter, kitd, kcatbound
@@ -138,7 +139,7 @@
         ice_ic,         restart,        restart_dir,     restart_file,  &
         restart_format, &
         dumpfreq,       diagfreq,       diag_file,       cpl_bgc,       &
-        conserv_check,  history_format
+        conserv_check,  history_format, runtype_startup
 
       namelist /grid_nml/ &
         kcatbound
@@ -147,18 +148,20 @@
         kitd,           ktherm,          ksno,     conduct,             &
         a_rapid_mode,   Rac_rapid_mode,  aspect_rapid_mode,             &
         dSdt_slow_mode, phi_c_slow_mode, phi_i_mushy,                   &
-        floediam,       hfrazilmin,      Tliquidus_max,    hi_min
+        floediam,       hfrazilmin,      rhoi,                          &
+        Tliquidus_max,    hi_min
 
       namelist /dynamics_nml/ &
         kstrength,      krdg_partic,    krdg_redist,    mu_rdg,         &
-        Cf
+        Cf,             dragio
 
       namelist /shortwave_nml/ &
         shortwave,      albedo_type,                                    &
         albicev,        albicei,         albsnowv,      albsnowi,       &
         ahmax,          R_ice,           R_pnd,         R_snw,          &
-        sw_redist,      sw_frac,         sw_dtemp,                      &
-        dT_mlt,         rsnw_mlt,        kalg,          snw_ssp_table
+        sw_redist,      sw_frac,         sw_dtemp,      hi_ssl,         &
+        dT_mlt,         rsnw_mlt,        kalg,          hs_ssl,         & 
+        snw_ssp_table
 
       namelist /ponds_nml/ &
         hs0,            dpscale,         frzpnd,                        &
@@ -167,7 +170,8 @@
       namelist /snow_nml/ &
         snwredist,      snwgrain,       rsnw_fall,     rsnw_tmax,      &
         rhosnew,        rhosmin,        rhosmax,       snwlvlfac,      &
-        windmin,        drhosdwind,     use_smliq_pnd, snw_aging_table
+        windmin,        drhosdwind,     use_smliq_pnd, snw_aging_table, &
+        rhos
 
       namelist /forcing_nml/ &
         atmbndy,         calc_strair,     calc_Tsfc,       &
@@ -234,7 +238,8 @@
            snwgrain_out=snwgrain, rsnw_fall_out=rsnw_fall, rsnw_tmax_out=rsnw_tmax, &
            rhosnew_out=rhosnew, rhosmin_out = rhosmin, rhosmax_out=rhosmax, &
            windmin_out=windmin, drhosdwind_out=drhosdwind, snwlvlfac_out=snwlvlfac, &
-           snw_aging_table_out=snw_aging_table)
+           snw_aging_table_out=snw_aging_table, dragio_out = dragio, rhos_out = rhos, &
+           rhoi_out = rhoi, hi_ssl_out = hi_ssl, hs_ssl_out = hs_ssl)
 
       call icepack_warnings_flush(nu_diag)
       if (icepack_warnings_aborted()) call icedrv_system_abort(string=subname, &
@@ -257,6 +262,7 @@
       dumpfreq='y'           ! restart frequency option
       dump_last=.false.      ! restart at end of run
       restart = .false.      ! if true, read restart files for initialization
+      runtype_startup = .false. ! Flag to use date in restart file. Similar to branch run
       restart_dir  = './'    ! write to executable dir for default
       restart_file = 'iced'  ! restart file name prefix
       restart_format = 'bin' ! default restart format is binary, other option 'nc'
@@ -667,6 +673,7 @@
          write(nu_diag,1030) ' dumpfreq                  = ', trim(dumpfreq)
          write(nu_diag,1010) ' dump_last                 = ', dump_last
          write(nu_diag,1010) ' restart                   = ', restart
+         write(nu_diag,1010) ' runtype_startup           = ', runtype_startup
          write(nu_diag,1030) ' restart_dir               = ', trim(restart_dir)
          write(nu_diag,1030) ' restart_file              = ', trim(restart_file)
          write(nu_diag,1030) ' restart_format            = ', trim(restart_format)
@@ -684,6 +691,9 @@
          if (kstrength == 1) &
          write(nu_diag,1000) ' Cf                        = ', Cf
          write(nu_diag,1000) ' ksno                      = ', ksno
+         write(nu_diag,1000) ' rhoi                      = ', rhoi 
+         write(nu_diag,1000) ' rhos                      = ', rhos 
+         write(nu_diag,1000) ' dragio                    = ', dragio 
          write(nu_diag,1030) ' shortwave                 = ', trim(shortwave)
          if (cpl_bgc) then
              write(nu_diag,1000) ' BGC coupling is switched ON'
@@ -695,6 +705,8 @@
          write(nu_diag,1000) ' R_ice                     = ', R_ice
          write(nu_diag,1000) ' R_pnd                     = ', R_pnd
          write(nu_diag,1000) ' R_snw                     = ', R_snw
+         write(nu_diag,1000) ' hi_ssl                    = ', hi_ssl
+         write(nu_diag,1000) ' hs_ssl                    = ', hs_ssl
          write(nu_diag,1000) ' dT_mlt                    = ', dT_mlt
          write(nu_diag,1000) ' rsnw_mlt                  = ', rsnw_mlt
          write(nu_diag,1000) ' kalg                      = ', kalg
@@ -988,7 +1000,9 @@
            snw_aging_table_in=snw_aging_table, &
            snwgrain_in=snwgrain, rsnw_fall_in=rsnw_fall, rsnw_tmax_in=rsnw_tmax, &
            rhosnew_in=rhosnew, rhosmin_in=rhosmin, rhosmax_in=rhosmax, &
-           windmin_in=windmin, drhosdwind_in=drhosdwind, snwlvlfac_in=snwlvlfac)
+           windmin_in=windmin, drhosdwind_in=drhosdwind, snwlvlfac_in=snwlvlfac, &
+           dragio_in=dragio, hi_ssl_in = hi_ssl, hs_ssl_in = hs_ssl, &
+           rhos_in = rhos, rhoi_in = rhoi)
       call icepack_init_tracer_sizes(ntrcr_in=ntrcr, &
            ncat_in=ncat, nilyr_in=nilyr, nslyr_in=nslyr, nblyr_in=nblyr, &
            nfsd_in=nfsd, n_iso_in=n_iso, n_aero_in=n_aero)
