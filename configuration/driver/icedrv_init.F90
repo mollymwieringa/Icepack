@@ -64,6 +64,7 @@
       use icedrv_calendar, only: npt, dt, ndtd, days_per_year, use_leap_years
       use icedrv_history, only: history_format
       use icedrv_restart_shared, only: restart, restart_dir, restart_file, restart_format
+      use icedrv_restart_shared, only: runtype_startup
       use icedrv_flux, only: l_mpond_fresh, cpl_bgc
       use icedrv_flux, only: default_season
       use icedrv_forcing, only: precip_units,    fyear_init,      ycycle
@@ -138,7 +139,7 @@
         ice_ic,         restart,        restart_dir,     restart_file,  &
         restart_format, &
         dumpfreq,       diagfreq,       diag_file,       cpl_bgc,       &
-        conserv_check,  history_format
+        conserv_check,  history_format, runtype_startup
 
       namelist /grid_nml/ &
         kcatbound
@@ -257,6 +258,7 @@
       dumpfreq='y'           ! restart frequency option
       dump_last=.false.      ! restart at end of run
       restart = .false.      ! if true, read restart files for initialization
+      runtype_startup = .false. ! Flag to use date in restart file. Similar to branch run.
       restart_dir  = './'    ! write to executable dir for default
       restart_file = 'iced'  ! restart file name prefix
       restart_format = 'bin' ! default restart format is binary, other option 'nc'
@@ -667,6 +669,7 @@
          write(nu_diag,1030) ' dumpfreq                  = ', trim(dumpfreq)
          write(nu_diag,1010) ' dump_last                 = ', dump_last
          write(nu_diag,1010) ' restart                   = ', restart
+         write(nu_diag,1010) ' runtype_startup           = ', runtype_startup
          write(nu_diag,1030) ' restart_dir               = ', trim(restart_dir)
          write(nu_diag,1030) ' restart_file              = ', trim(restart_file)
          write(nu_diag,1030) ' restart_format            = ', trim(restart_format)
