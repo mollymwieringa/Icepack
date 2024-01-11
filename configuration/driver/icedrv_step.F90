@@ -856,7 +856,7 @@
       ! Ridging
       !-----------------------------------------------------------------
 
-         if (trim(ocn_data_type) == "SHEBA") then
+         if (trim(ocn_data_type) == "SHEBA" .or. trim(ocn_data_type) == "ISPOL") then
 
          do i = 1, nx
 
