@@ -77,6 +77,7 @@
       use icedrv_state, only: aicen, vicen, vsnon, trcrn
       use icedrv_arrays_column, only: dhsn, ffracn
       use icedrv_arrays_column, only: first_ice, first_ice_real
+      use icedrv_init, only: tlat, tlon
 
       ! local variables
 
@@ -175,6 +176,8 @@
       ! Tsfc is the only tracer written to binary files.  All other
       ! tracers are written to their own dump/restart binary files.
       !-----------------------------------------------------------------
+      call write_restart_field(nu_dump,tlat(:),1,'tlat',dims)
+      call write_restart_field(nu_dump,tlon(:),1,'tlon',dims)
 
       call write_restart_field(nu_dump,aicen(:,:),ncat,'aicen',dims)
       call write_restart_field(nu_dump,vicen(:,:),ncat,'vicen',dims)

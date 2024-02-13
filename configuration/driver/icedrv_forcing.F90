@@ -723,6 +723,7 @@
          cldf (nt) = max(min(cldf(nt),c1),c0)
          fsw  (nt) = max(fsw(nt),c0)
          fsnow(nt) = max(fsnow(nt),c0)
+         frain(nt) = max(frain(nt),c0)
          rhoa (nt) = max(rhoa(nt),c0)
          Qa   (nt) = max(Qa(nt),c0)
 
