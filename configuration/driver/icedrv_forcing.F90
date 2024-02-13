@@ -162,6 +162,7 @@
       if (trim(atm_data_type(1:5)) == 'ISPOL') call atm_ISPOL
       if (trim(atm_data_type(1:4)) == 'NICE')  call atm_NICE
       if (trim(atm_data_type(1:4)) == 'CAM6')  call atm_CAM6
+      if (trim(atm_data_type(1:5)) == 'JRA55') call atm_JRA55
       if (trim(ocn_data_type(1:5)) == 'SHEBA' .or. trim(ocn_data_type(1:5)) == 'ISPOL') call ice_open_clos
    
       ! call ice_open_clos
@@ -637,6 +638,54 @@
       close (nu_forcing)
    
       end subroutine atm_CAM6
+
+!=======================================================================
+
+      subroutine atm_JRA55
+
+      integer (kind=int_kind) :: &
+         nt             ! loop index
+
+      real (kind=dbl_kind) :: &
+         dlwsfc,  &     ! downwelling longwave (W/m2)
+         dswsfc,  &     ! downwelling shortwave (W/m2)
+         windu10, &     ! wind components (m/s)
+         windv10, &     !
+         temp2m,  &     ! 2m air temperature (K)
+         spechum ,&     ! specific humidity (kg/kg)
+         precip         ! precipitation (kg/m2/s)
+
+      character (char_len_long) string1
+      character (char_len_long) filename
+      character(len=*), parameter :: subname='(atm_JRA55)'
+
+!      atm_data_file = 'cfsv2_2015_220_70_01hr.txt'
+      filename = trim(data_dir)//'/JRA55/'//trim(atm_data_file)
+
+      write (nu_diag,*) 'Reading ',filename
+
+      open (nu_forcing, file=filename, form='formatted')
+      read (nu_forcing, *) string1 ! headers
+      read (nu_forcing, *) string1 ! units
+
+      do nt = 1, ntime
+         read (nu_forcing, '(6(f10.5,1x),2(f10.8,1x))') &
+         dswsfc, dlwsfc, windu10, windv10, temp2m, spechum, precip
+
+           flw_data(nt) = dlwsfc
+           fsw_data(nt) = dswsfc
+          uatm_data(nt) = windu10
+          vatm_data(nt) = windv10
+          Tair_data(nt) = temp2m
+          potT_data(nt) = temp2m
+            Qa_data(nt) = spechum
+         fsnow_data(nt) = precip
+      enddo
+
+      close (nu_forcing)
+
+      end subroutine atm_JRA55
+
 !=======================================================================
 
       subroutine prepare_forcing (Tair,     fsw,      &
