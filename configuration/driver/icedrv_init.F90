@@ -36,6 +36,10 @@
       real (kind=dbl_kind), dimension (nx), public :: &
          TLON   , & ! longitude of temp pts (radians)
          TLAT       ! latitude of temp pts (radians)
+      
+      real (kind=dbl_kind), public :: &
+         input_lat, &
+         input_lon
 
       logical (kind=log_kind), &
          dimension (nx), public :: &
@@ -139,7 +143,8 @@
         ice_ic,         restart,        restart_dir,     restart_file,  &
         restart_format, &
         dumpfreq,       diagfreq,       diag_file,       cpl_bgc,       &
-        conserv_check,  history_format, runtype_startup
+        conserv_check,  history_format, runtype_startup, input_lat,     &
+        input_lon
 
       namelist /grid_nml/ &
         kcatbound
@@ -266,6 +271,8 @@
       restart_dir  = './'    ! write to executable dir for default
       restart_file = 'iced'  ! restart file name prefix
       restart_format = 'bin' ! default restart format is binary, other option 'nc'
+      input_lat      = p5*pi
+      input_lon      = c0
       history_format = 'none'     ! if 'nc', write history files. Otherwise do nothing
       ice_ic       = 'default'    ! initial conditions are specified in the code
                                   ! otherwise, the filename for reading restarts
@@ -675,6 +682,8 @@
          write(nu_diag,1010) ' restart                   = ', restart
          write(nu_diag,1010) ' runtype_startup           = ', runtype_startup
          write(nu_diag,1030) ' restart_dir               = ', trim(restart_dir)
+         write(nu_diag,1020) ' input_lat                 = ', input_lat
+         write(nu_diag,1020) ' input_lon                 = ', input_lon
          write(nu_diag,1030) ' restart_file              = ', trim(restart_file)
          write(nu_diag,1030) ' restart_format            = ', trim(restart_format)
          write(nu_diag,1030) ' history_format            = ', trim(history_format)
@@ -1053,8 +1062,8 @@
       ! lat, lon, cell widths, angle, land mask
       !-----------------------------------------------------------------
 
-      TLAT(:) = p5*pi  ! pi/2, North pole
-      TLON(:) = c0
+      TLAT(:) = input_lat !p5*pi  ! pi/2, North pole
+      TLON(:) = input_lon !!c0
 
       do i = 2, nx
          TLAT(i) = TLAT(i-1) - p5*pi/180._dbl_kind ! half-deg increments
