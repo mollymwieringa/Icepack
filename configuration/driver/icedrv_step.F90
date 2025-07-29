@@ -115,7 +115,7 @@
       use icedrv_domain_size, only: ncat, nilyr, nslyr, n_aero, n_iso, nfsd, nx
       use icedrv_flux, only: frzmlt, sst, Tf, strocnxT, strocnyT, rsiden, wlat, &
                              fbot, Tbot, Tsnice
-      use icedrv_flux, only: meltsn, melttn, meltbn, congeln, snoicen, uatm, vatm
+      use icedrv_flux, only: meltsn, melttn, meltbn, congeln, snoicen, hsnoicen, uatm, vatm
       use icedrv_flux, only: wind, rhoa, potT, Qa, Qa_iso, zlvl, strax, stray, flatn
       use icedrv_flux, only: fsensn, fsurfn, fcondtopn, fcondbotn
       use icedrv_flux, only: flw, fsnow, fpond, sss, mlt_onset, frz_onset, fsloss
@@ -123,7 +123,7 @@
       use icedrv_flux, only: fcondtop, fcondbot, fsens, fresh, fsalt, fhocn
       use icedrv_flux, only: flat, fswabs, flwout, evap, evaps, evapi
       use icedrv_flux, only: Tref, Qref, Qref_iso, Uref
-      use icedrv_flux, only: meltt, melts, meltb, congel, snoice
+      use icedrv_flux, only: meltt, melts, meltb, congel, snoice, hsnoice
       use icedrv_flux, only: fswthru, fswthru_vdr, fswthru_vdf, fswthru_idr, fswthru_idf
       use icedrv_flux, only: flatn_f, fsensn_f, fsurfn_f, fcondtopn_f
       use icedrv_flux, only: dsnow, dsnown, faero_atm, faero_ocn
@@ -134,7 +134,8 @@
       use icedrv_init, only: lmask_n, lmask_s
       use icedrv_state, only: aice, aicen, aice_init, aicen_init, vicen_init
       use icedrv_state, only: vice, vicen, vsno, vsnon, trcrn, uvel, vvel, vsnon_init
-
+      use icedrv_flux, only: hosing
+      
       ! column packge includes
       use icepack_intfc, only: icepack_step_therm1
 
@@ -169,7 +170,7 @@
          rsnwn, smicen, smliqn
 
       real (kind=dbl_kind) :: &
-         puny
+         puny, HOSE
 
       character(len=*), parameter :: subname='(step_therm1)'
 
@@ -273,6 +274,7 @@
           enddo
         endif ! snwgrain
 
+        HOSE = dt*hosing(i)
         call icepack_step_therm1(dt=dt, &
             aicen_init = aicen_init(i,:), &
             vicen_init = vicen_init(i,:), &
@@ -370,6 +372,8 @@
             melts    = melts(i),      meltsn    = meltsn(i,:),    &
             congel   = congel(i),     congeln   = congeln(i,:),   &
             snoice   = snoice(i),     snoicen   = snoicen(i,:),   &
+            hsnoice  = hsnoice(i),    hsnoicen  = hsnoicen(i,:),   &
+            HOSE     = HOSE, &
             dsnow    = dsnow(i),      dsnown    = dsnown(i,:),    &
             meltsliqn= meltsliqn(i,:), &
             afsdn         = trcrn       (i,nt_fsd:nt_fsd+nfsd-1,:), &

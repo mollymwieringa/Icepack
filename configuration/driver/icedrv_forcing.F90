@@ -11,7 +11,7 @@
       use icedrv_calendar, only: time, nyr, dayyr, mday, month, secday
       use icedrv_calendar, only: daymo, daycal, dt, yday, sec
       use icedrv_calendar, only: npt, use_leap_years, time0, year_init
-      use icedrv_constants, only: nu_diag, nu_forcing, nu_open_clos
+      use icedrv_constants, only: nu_diag, nu_forcing, nu_open_clos, nu_hosing
       use icedrv_constants, only: c0, c1, c2, c10, c100, p5, c4, c24
       use icepack_intfc, only: icepack_warnings_flush, icepack_warnings_aborted
       use icepack_intfc, only: icepack_query_parameters
@@ -20,7 +20,7 @@
       use icedrv_system, only: icedrv_system_abort
       use icedrv_flux, only: zlvl, Tair, potT, rhoa, uatm, vatm, wind, &
          strax, stray, fsw, swvdr, swvdf, swidr, swidf, Qa, flw, frain, &
-         fsnow, sst, sss, uocn, vocn, qdp, hmix, Tf, opening, closing, sstdat
+         fsnow, sst, sss, uocn, vocn, qdp, hmix, Tf, opening, closing, sstdat, hosing
 #ifdef USE_NETCDF
       use netcdf
 #endif
@@ -68,7 +68,8 @@
            zlvl_data(:), &
            hmix_data(:), &
            open_data(:), &
-           clos_data(:)
+           clos_data(:), &
+           hose_rate(:)
 
       real (kind=dbl_kind), dimension(nx) :: &
           sst_temp
@@ -79,11 +80,13 @@
          bgc_data_format, & ! 'bin'=binary or 'nc'=netcdf
          atm_data_type,   & ! 'default', 'clim', 'CFS', 'MDF'
          ocn_data_type,   & ! 'default', 'SHEBA' 'MDF'
+         hose_data_type,  & ! 'default', 'HOSING'
          bgc_data_type,   & ! 'default', 'ISPOL', 'NICE'
          lateral_flux_type,   & ! 'uniform_ice', 'open_water'
          atm_data_file,   & ! atmospheric forcing data file
          ocn_data_file,   & ! ocean forcing data file
          ice_data_file,   & ! ice forcing data file
+         hose_data_file,  & ! hosing forcing data file
          bgc_data_file,   & ! biogeochemistry forcing data file
          precip_units       ! 'mm_per_month', 'mm_per_sec', 'mks'
 
@@ -148,7 +151,7 @@
                vocn_data(ntime), frain_data(ntime), swvdr_data(ntime), &
                swvdf_data(ntime), swidr_data(ntime), swidf_data(ntime), &
                zlvl_data(ntime), hmix_data(ntime), open_data(ntime), &
-               clos_data(ntime))
+               clos_data(ntime), hose_rate(ntime))
 
       fyear       = fyear_init + mod(nyr-1,ycycle) ! current year
       fyear_final = fyear_init + ycycle - 1 ! last year in forcing cycle
@@ -194,6 +197,7 @@
       if (trim(atm_data_type(1:4)) == 'NICE')  call atm_NICE
       if (trim(atm_data_type(1:3)) == 'MDF')   call atm_MDF
       if (trim(ocn_data_type(1:5)) == 'SHEBA') call ice_open_clos
+      if (trim(hose_data_type(1:6)) == 'HOSING') call ice_hosing
 
       if (restore_ocn) then
         if (trestore == 0) then
@@ -508,8 +512,6 @@
 
       call finish_ocn_forcing(sst_temp)
 
-      ! Lindsay SHEBA open/close dataset is hourly
-      if (trim(ocn_data_type) == 'SHEBA') then
 
         sec1hr = secday/c24                      ! seconds in 1 hour
         maxrec = ntime
@@ -520,11 +522,16 @@
         mnext = mod(recnum-1,       maxrec) + 1
         call interp_coeff ( recnum, recslot, sec1hr, dataloc, c1intp, c2intp)
 
+      ! Lindsay SHEBA open/close dataset is hourly
+      if (trim(ocn_data_type) == 'SHEBA') then
         opening(:) =   c1intp * open_data(mlast) + c2intp * open_data(mnext)
         closing(:) = -(c1intp * clos_data(mlast) + c2intp * clos_data(mnext))
-
       endif
 
+      if (trim(hose_data_type) == 'HOSING') then
+         hosing(:) =   c1intp * hose_rate(mlast) + c2intp * hose_rate(mnext)
+      endif
+      
       end subroutine get_forcing
 
 !=======================================================================
@@ -1054,10 +1061,10 @@
          status,  &  ! NetCDF status flag
          varid       ! NetCDF variable id
 
-      integer (kind=dbl_kind), allocatable :: &
+      integer (kind=8), allocatable :: &
          data_time(:)   ! array for time array in forcing data
 
-      integer (kind=dbl_kind), dimension(ntime) :: &
+      integer (kind=8), dimension(ntime) :: &
          model_time ! array for Icepack minutely time
 
       real (kind=dbl_kind) :: &
@@ -1102,7 +1109,7 @@
          ! May have strange behavior if dt is not an integer
          model_time0 = (year_init - 1970) * Gregorian_year * 24 * 3600 + time0
          do nt = 1, ntime
-            model_time(nt) = int(model_time0 + dt * nt, kind=dbl_kind)
+            model_time(nt) = int(model_time0 + dt * nt, kind=8)
          enddo
 
          ! Read, average, and interpolate forcing data from each variable
@@ -1290,7 +1297,7 @@
       integer (kind=int_kind), intent(in) :: &
          ncid           ! NetCDF file id
 
-      integer (kind=dbl_kind), dimension(ntime), intent(in) :: &
+      integer (kind=8), dimension(ntime), intent(in) :: &
          model_time     ! model time array
 
       ! Local variables
@@ -1305,7 +1312,7 @@
          nvardims,&  ! number of dimensions for variable
          varid       ! NetCDF variable id
 
-      integer (kind=dbl_kind), allocatable :: &
+      integer (kind=8), allocatable :: &
          data_time(:)   ! array for time array in forcing data
 
       integer, dimension(1) :: &
@@ -1554,10 +1561,10 @@
          status,  &  ! NetCDF status flag
          varid       ! NetCDF variable id
 
-      integer (kind=dbl_kind), allocatable :: &
+      integer (kind=8), allocatable :: &
          data_time(:)   ! array for time array in forcing data
 
-      integer (kind=dbl_kind), dimension(ntime) :: &
+      integer (kind=8), dimension(ntime) :: &
          model_time ! array for Icepack minutely time
 
       real (kind=dbl_kind) :: &
@@ -1604,7 +1611,7 @@
          ! May have strange behavior if dt is not an integer
          model_time0 = (year_init - 1970) * Gregorian_year * 24 * 3600 + time0
          do nt = 1, ntime
-            model_time(nt) = int(model_time0 + dt * nt, kind=dbl_kind)
+            model_time(nt) = int(model_time0 + dt * nt, kind=8)
          enddo
 
          ! Warn if simulation includes leg 4-5 transition
@@ -1689,8 +1696,35 @@
       enddo
 
       close (nu_open_clos)
-
+      
      end subroutine ice_open_clos
+
+!=======================================================================
+
+     subroutine ice_hosing
+
+
+      integer (kind=int_kind) :: i
+
+      real (kind=dbl_kind) :: xtime
+
+      character (char_len_long) filename
+
+      !      hose_data_file = 'hosing.dat'
+      filename = trim(data_dir)//'/HOSING/'//trim(hose_data_file)
+      
+      write (nu_diag,*) 'Reading ',filename
+
+      open (nu_hosing, file=filename, form='formatted')
+
+      ! hourly data
+      do i=1,ntime
+         read(nu_hosing,*) xtime, hose_rate(i)
+      enddo
+
+      close (nu_hosing)
+
+     end subroutine ice_hosing
 
 !=======================================================================
 

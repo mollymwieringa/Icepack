@@ -75,8 +75,8 @@
       use icedrv_flux, only: default_season
       use icedrv_flux, only: sss_fixed, qdp_fixed, hmix_fixed
       use icedrv_forcing, only: precip_units,    fyear_init,      ycycle
-      use icedrv_forcing, only: atm_data_type,   ocn_data_type,   bgc_data_type
-      use icedrv_forcing, only: atm_data_file,   ocn_data_file,   bgc_data_file
+      use icedrv_forcing, only: atm_data_type,   ocn_data_type,   bgc_data_type, hose_data_type
+      use icedrv_forcing, only: atm_data_file,   ocn_data_file,   bgc_data_file, hose_data_file
       use icedrv_forcing, only: ice_data_file
       use icedrv_forcing, only: atm_data_format, ocn_data_format, bgc_data_format
       use icedrv_forcing, only: data_dir
@@ -193,9 +193,9 @@
         default_season,  wave_spec_type,  cpl_frazil,      &
         precip_units,    fyear_init,      ycycle,          &
         atm_data_type,   ocn_data_type,   bgc_data_type,   &
-        lateral_flux_type,                                 &
+        lateral_flux_type, hose_data_type,                 &
         atm_data_file,   ocn_data_file,   bgc_data_file,   &
-        ice_data_file,                                     &
+        ice_data_file,   hose_data_file,                   &
         atm_data_format, ocn_data_format, bgc_data_format, &
         data_dir,        trestore,        restore_ocn,     &
         sss_fixed,       qdp_fixed,       hmix_fixed,      &
@@ -306,7 +306,9 @@
       wave_spec_type  = 'none'    ! type of wave spectrum forcing
       ocn_data_format = 'bin'     ! file format ('bin'=binary or 'nc'=netcdf)
       ocn_data_type   = 'default' ! source of ocean forcing data
+      hose_data_type  = 'default' ! source of hosing forcing data
       ocn_data_file   = ' '       ! ocean forcing data file
+      hose_data_file  = ' '       ! hosing forcing data file
       ice_data_file   = ' '       ! ice forcing data file (opening, closing)
       lateral_flux_type   = 'uniform_ice' ! if 'uniform_ice' assume closing
                                            ! fluxes in uniform ice
@@ -815,11 +817,13 @@
          write(nu_diag,1030) ' atm_data_type             = ', trim(atm_data_type)
          write(nu_diag,1030) ' ocn_data_type             = ', trim(ocn_data_type)
          write(nu_diag,1030) ' bgc_data_type             = ', trim(bgc_data_type)
+         write(nu_diag,1030) ' hose_data_type            = ', trim(hose_data_type)
 
          write(nu_diag,*)    '  lateral_flux_type        = ', trim(lateral_flux_type)
 
          write(nu_diag,1030) ' atm_data_file             = ', trim(atm_data_file)
          write(nu_diag,1030) ' ocn_data_file             = ', trim(ocn_data_file)
+         write(nu_diag,1030) ' hose_data_file            = ', trim(hose_data_file)
          write(nu_diag,1030) ' bgc_data_file             = ', trim(bgc_data_file)
          write(nu_diag,1030) ' ice_data_file             = ', trim(ice_data_file)
          write(nu_diag,1010) ' precalc_forc              = ', precalc_forc

@@ -50,7 +50,7 @@
       use icedrv_flux, only: evap, fsnow, frain, frazil
       use icedrv_flux, only: fswabs, flw, flwout, fsens, fsurf, flat
       use icedrv_flux, only: Tair, Qa, fsw, fcondtop
-      use icedrv_flux, only: meltt, meltb, meltl, melts, snoice
+      use icedrv_flux, only: meltt, meltb, meltl, melts, snoice, hsnoice
       use icedrv_flux, only: dpnd_flushn, dpnd_exponn, dpnd_freebdn, dpnd_initialn, dpnd_dlidn
       use icedrv_flux, only: dpnd_flush, dpnd_expon, dpnd_freebd, dpnd_initial, dpnd_dlid
       use icedrv_flux, only: dpnd_melt, dpnd_ridge
@@ -85,7 +85,7 @@
       real (kind=dbl_kind),allocatable :: &
          value1(:), value2(:,:), value3(:,:,:), value4(:,:,:,:)  ! temporary
 
-      integer (kind=dbl_kind), parameter :: num_2d = 33
+      integer (kind=dbl_kind), parameter :: num_2d = 34
       character(len=16), parameter :: fld_2d(num_2d) = &
          (/ 'aice            ', 'vice            ', 'vsno            ', &
             'uvel            ', 'vvel            ', 'divu            ', &
@@ -96,6 +96,7 @@
             'frain           ', 'Tair            ', 'Qa              ', &
             'fsw             ', 'fcondtop        ', 'meltt           ', &
             'meltb           ', 'meltl           ', 'snoice          ', &
+            'hsnoice         ', &
             'dsnow           ', 'congel          ', 'sst             ', &
             'sss             ', 'Tf              ', 'fhocn           ', &
             'melts           ' /)
@@ -382,6 +383,7 @@
          if (trim(fld_2d(n)) == 'meltl')    value2(1:count2(1),1) = meltl(1:count2(1))
          if (trim(fld_2d(n)) == 'melts')    value2(1:count2(1),1) = melts(1:count2(1))
          if (trim(fld_2d(n)) == 'snoice')   value2(1:count2(1),1) = snoice(1:count2(1))
+         if (trim(fld_2d(n)) == 'hsnoice')   value2(1:count2(1),1) = hsnoice(1:count2(1))
          if (trim(fld_2d(n)) == 'dsnow')    value2(1:count2(1),1) = dsnow(1:count2(1))
          if (trim(fld_2d(n)) == 'congel')   value2(1:count2(1),1) = congel(1:count2(1))
          if (trim(fld_2d(n)) == 'sst')      value2(1:count2(1),1) = sst(1:count2(1))
