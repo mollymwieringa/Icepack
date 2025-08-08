@@ -83,6 +83,7 @@
          nt_fsd       = 0, & ! floe size distribution
          nt_smice     = 0, & ! mass of ice in snow
          nt_smliq     = 0, & ! mass of liquid water in snow
+         nt_hsnoice   = 0, & ! snowice layer depth
          nt_rhos      = 0, & ! snow density
          nt_rsnw      = 0, & ! snow grain radius
          nt_isosno    = 0, & ! starting index for isotopes in snow
@@ -206,7 +207,7 @@
 ! set tracer active flags
 
       subroutine icepack_init_tracer_flags(&
-           tr_iage_in, tr_FY_in, tr_lvl_in, tr_snow_in, &
+           tr_iage_in, tr_FY_in, tr_lvl_in, tr_snow_in, tr_snoice_in, &
            tr_pond_in, tr_pond_lvl_in, tr_pond_topo_in, tr_pond_sealvl_in, &
            tr_fsd_in, tr_aero_in, tr_iso_in, tr_brine_in, tr_zaero_in, &
            tr_bgc_Nit_in, tr_bgc_N_in, tr_bgc_DON_in, tr_bgc_C_in, tr_bgc_chl_in, &
@@ -222,6 +223,7 @@
              tr_pond_topo_in , & ! if .true., use explicit topography-based ponds
              tr_pond_sealvl_in,& ! if .true., use sealvl pond parameteriztion
              tr_snow_in      , & ! if .true., use snow redistribution or metamorphosis tracers
+             tr_snoice_in    , & ! if .true., use snow redistribution or metamorphosis tracers
              tr_fsd_in       , & ! if .true., use floe size distribution tracers
              tr_iso_in       , & ! if .true., use isotope tracers
              tr_aero_in      , & ! if .true., use aerosol tracers
@@ -298,7 +300,7 @@
 ! query tracer active flags
 
       subroutine icepack_query_tracer_flags(&
-           tr_iage_out, tr_FY_out, tr_lvl_out, tr_snow_out, &
+           tr_iage_out, tr_FY_out, tr_lvl_out, tr_snow_out, tr_snoice_out, &
            tr_pond_out, tr_pond_lvl_out, tr_pond_topo_out, tr_pond_sealvl_out, &
            tr_fsd_out, tr_aero_out, tr_iso_out, tr_brine_out, tr_zaero_out, &
            tr_bgc_Nit_out, tr_bgc_N_out, tr_bgc_DON_out, tr_bgc_C_out, tr_bgc_chl_out, &
@@ -314,6 +316,7 @@
              tr_pond_topo_out , & ! if .true., use explicit topography-based ponds
              tr_pond_sealvl_out,& ! if .true., use sealvl pond parameterization
              tr_snow_out      , & ! if .true., use snow redistribution or metamorphosis tracers
+             tr_snoice_out      , & ! if .true., use snow redistribution or metamorphosis tracers
              tr_fsd_out       , & ! if .true., use floe size distribution
              tr_iso_out       , & ! if .true., use isotope tracers
              tr_aero_out      , & ! if .true., use aerosol tracers
@@ -410,7 +413,7 @@
            nt_Tsfc_in, nt_qice_in, nt_qsno_in, nt_sice_in, &
            nt_fbri_in, nt_iage_in, nt_FY_in, &
            nt_alvl_in, nt_vlvl_in, nt_apnd_in, nt_hpnd_in, nt_ipnd_in, &
-           nt_smice_in, nt_smliq_in, nt_rhos_in, nt_rsnw_in, &
+           nt_smice_in, nt_smliq_in, nt_hsnoice_in, nt_rhos_in, nt_rsnw_in, &
            nt_fsd_in, nt_isosno_in, nt_isoice_in, &
            nt_aero_in, nt_zaero_in, nt_bgc_C_in, &
            nt_bgc_N_in, nt_bgc_chl_in, nt_bgc_DOC_in, nt_bgc_DON_in, &
@@ -439,6 +442,7 @@
              nt_ipnd_in, & ! melt pond refrozen lid thickness
              nt_smice_in,& ! mass of ice in snow
              nt_smliq_in,& ! mass of liquid water in snow
+             nt_hsnoice_in,& ! snowice layer depth
              nt_rhos_in, & ! snow density
              nt_rsnw_in, & ! snow grain radius
              nt_fsd_in,  & ! floe size distribution
@@ -520,6 +524,7 @@
         if (present(nt_fsd_in) ) nt_fsd  = nt_fsd_in
         if (present(nt_smice_in)     ) nt_smice      = nt_smice_in
         if (present(nt_smliq_in)     ) nt_smliq      = nt_smliq_in
+        if (present(nt_hsnoice_in)   ) nt_hsnoice    = nt_hsnoice_in
         if (present(nt_rhos_in)      ) nt_rhos       = nt_rhos_in
         if (present(nt_rsnw_in)      ) nt_rsnw       = nt_rsnw_in
         if (present(nt_isosno_in)    ) nt_isosno     = nt_isosno_in
@@ -770,7 +775,7 @@
            nt_Tsfc_out, nt_qice_out, nt_qsno_out, nt_sice_out, &
            nt_fbri_out, nt_iage_out, nt_FY_out, &
            nt_alvl_out, nt_vlvl_out, nt_apnd_out, nt_hpnd_out, nt_ipnd_out, &
-           nt_smice_out, nt_smliq_out, nt_rhos_out, nt_rsnw_out, &
+           nt_smice_out, nt_smliq_out, nt_hsnoice_out, nt_rhos_out, nt_rsnw_out, &
            nt_fsd_out, nt_isosno_out, nt_isoice_out, &
            nt_aero_out, nt_zaero_out, nt_bgc_C_out, &
            nt_bgc_N_out, nt_bgc_chl_out, nt_bgc_DOC_out, nt_bgc_DON_out, &
@@ -799,6 +804,7 @@
              nt_ipnd_out, & ! melt pond refrozen lid thickness
              nt_smice_out,& ! mass of ice in snow
              nt_smliq_out,& ! mass of liquid water in snow
+             nt_hsnoice_out,& ! snowice layer depth
              nt_rhos_out, & ! snow density
              nt_rsnw_out, & ! snow grain radius
              nt_fsd_out,  & ! floe size distribution
@@ -878,6 +884,7 @@
         if (present(nt_fsd_out) ) nt_fsd_out  = nt_fsd
         if (present(nt_smice_out)     ) nt_smice_out      = nt_smice
         if (present(nt_smliq_out)     ) nt_smliq_out      = nt_smliq
+        if (present(nt_hsnoice_out)   ) nt_hsnoice_out    = nt_hsnoice
         if (present(nt_rhos_out)      ) nt_rhos_out       = nt_rhos
         if (present(nt_rsnw_out)      ) nt_rsnw_out       = nt_rsnw
         if (present(nt_isosno_out)    ) nt_isosno_out     = nt_isosno
@@ -956,6 +963,7 @@
         write(iounit,*) "  nt_fsd  = ",nt_fsd
         write(iounit,*) "  nt_smice      = ",nt_smice
         write(iounit,*) "  nt_smliq      = ",nt_smliq
+        write(iounit,*) "  nt_hsnoice    = ",nt_hsnoice
         write(iounit,*) "  nt_rhos       = ",nt_rhos
         write(iounit,*) "  nt_rsnw       = ",nt_rsnw
         write(iounit,*) "  nt_isosno     = ",nt_isosno

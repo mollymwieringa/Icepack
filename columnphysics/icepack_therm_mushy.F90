@@ -60,7 +60,7 @@
                                           flwoutn,  fsurfn,   &
                                           fcondtop, fcondbot, &
                                           fadvheat, snoice,   &
-                                          HOSE,     hsnoice,  &
+                                          HOSE,     hoseice,  &
                                           smice,    smliq,    &
                                           dpnd_flush,         &
                                           dpnd_expon)
@@ -106,8 +106,8 @@
     real (kind=dbl_kind), intent(out):: &
          fcondbot    , & ! downward cond flux at bottom surface (W m-2)
          fadvheat    , & ! flow of heat to ocean due to advection (W m-2)
-         snoice      , & ! snow ice formation
-         hsnoice         ! snow ice formation from hosing
+         snoice      , & ! snow ice formation for history output (m)
+         hoseice         ! snow ice formation from hosing for history output (m)
 
     real (kind=dbl_kind), intent(in):: &
          HOSE ! amnt to hose per step in m
@@ -356,7 +356,7 @@
                    sss,        qocn,     &
                    smice,      smliq,    &
                    snoice,     fadvheat, &
-                   HOSE,       hsnoice)
+                   HOSE,       hoseice)
     if (icepack_warnings_aborted(subname)) return
 
   end subroutine temperature_changes_salinity
@@ -3329,7 +3329,7 @@
                        sss,    qocn,     &
                        smice,  smliq,    &
                        snoice, fadvheat, &
-                       HOSE, hsnoice)   ! CMB for hosing 
+                       HOSE, hoseice)   ! CMB for hosing 
 
     ! given upwards flushing brine flow calculate amount of snow ice and
     ! convert snow to ice with appropriate properties
@@ -3359,7 +3359,7 @@
 
     real(kind=dbl_kind), intent(out) :: &
          snoice            , &  ! snow ice formation
-         hsnoice                ! CMB snow ice formation from hosing  
+         hoseice                ! CMB snow ice formation from hosing  
 
    real(kind=dbl_kind), intent(inout) :: &
          fadvheat              ! advection heat flux to ocean
@@ -3393,7 +3393,7 @@
     character(len=*),parameter :: subname='(flood_ice)'
 
     snoice = c0
-    hsnoice=c0
+    hoseice=c0
 
     ! check we have snow
     if (hsn > puny) then
@@ -3438,14 +3438,14 @@
              ! CMB so (1-phi_snowice) is fraction of fresh ice within snow (where grains are)
              ! CMB flooding fills up the pore space, fresh ice stays same
              if (hsn>0.01) then ! tends to give NaNs when hsn is very thin
-                hsnoice= HOSE/phi_snowice  ! CMB so hsnoice > HOSE inflated by snow grains
+                hoseice= HOSE/phi_snowice  ! CMB so hoseice > HOSE inflated by snow grains
              endif
          endif ! freeboard_density > c0
              !       endif ! snwgrain
 
-       if ((freeboard_density > c0) .or. (hsnoice>c0)) then ! ice is flooded (CMB added hsnoice)
+       if ((freeboard_density > c0) .or. (hoseice>c0)) then ! ice is flooded (CMB added hoseice)
 
-          dh = freeboard_density / (rho_ocn - rho_snowice + rhos) + hsnoice
+          dh = freeboard_density / (rho_ocn - rho_snowice + rhos) + hoseice
           dh = max(min(dh,hsn),c0)
 
           ! enthalpy of snow that becomes snow-ice
@@ -3487,7 +3487,7 @@
           ! change thicknesses
           hilyr = hilyr2
           hslyr = hslyr2
-          snoice = dh - hsnoice
+          snoice = dh - hoseice   ! henceforth snoice,hoseice are diagnostics for history output
 
           hadded = (dh * phi_snowice) / dt
           wadded = hadded * rhoi
