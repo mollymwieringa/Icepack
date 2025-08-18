@@ -108,6 +108,7 @@
          tr_pond_topo = .false., & ! if .true., use explicit topography-based ponds
          tr_pond_sealvl=.false., & ! if .true., use sealvl pond parameterization
          tr_snow      = .false., & ! if .true., use snow redistribution or metamorphosis tracers
+         tr_snoice    = .false., & ! if .true., use snow-ice layer tracer
          tr_iso       = .false., & ! if .true., use isotope tracers
          tr_aero      = .false., & ! if .true., use aerosol tracers
          tr_brine     = .false., & ! if .true., brine height differs from ice thickness
@@ -253,6 +254,7 @@
         if (present(tr_pond_topo_in)) tr_pond_topo = tr_pond_topo_in
         if (present(tr_pond_sealvl_in)) tr_pond_sealvl = tr_pond_sealvl_in
         if (present(tr_snow_in)   ) tr_snow    = tr_snow_in
+        if (present(tr_snoice_in) ) tr_snoice  = tr_snoice_in
         if (present(tr_fsd_in)    ) tr_fsd     = tr_fsd_in
         if (present(tr_iso_in)    ) tr_iso     = tr_iso_in
         if (present(tr_aero_in)   ) tr_aero    = tr_aero_in
@@ -316,7 +318,7 @@
              tr_pond_topo_out , & ! if .true., use explicit topography-based ponds
              tr_pond_sealvl_out,& ! if .true., use sealvl pond parameterization
              tr_snow_out      , & ! if .true., use snow redistribution or metamorphosis tracers
-             tr_snoice_out      , & ! if .true., use snow redistribution or metamorphosis tracers
+             tr_snoice_out    , & ! if .true., use snow-ice layer tracers
              tr_fsd_out       , & ! if .true., use floe size distribution
              tr_iso_out       , & ! if .true., use isotope tracers
              tr_aero_out      , & ! if .true., use aerosol tracers
@@ -346,6 +348,7 @@
         if (present(tr_pond_topo_out)) tr_pond_topo_out = tr_pond_topo
         if (present(tr_pond_sealvl_out)) tr_pond_sealvl_out = tr_pond_sealvl
         if (present(tr_snow_out)   ) tr_snow_out    = tr_snow
+        if (present(tr_snoice_out) ) tr_snoice_out    = tr_snoice
         if (present(tr_fsd_out)    ) tr_fsd_out     = tr_fsd
         if (present(tr_iso_out)    ) tr_iso_out     = tr_iso
         if (present(tr_aero_out)   ) tr_aero_out    = tr_aero
@@ -386,6 +389,7 @@
         write(iounit,*) "  tr_pond_topo = ",tr_pond_topo
         write(iounit,*) "  tr_pond_sealvl = ",tr_pond_sealvl
         write(iounit,*) "  tr_snow    = ",tr_snow
+        write(iounit,*) "  tr_snoice  = ",tr_snoice
         write(iounit,*) "  tr_fsd     = ",tr_fsd
         write(iounit,*) "  tr_iso     = ",tr_iso
         write(iounit,*) "  tr_aero    = ",tr_aero

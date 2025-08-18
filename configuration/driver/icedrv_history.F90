@@ -117,7 +117,7 @@
          tr_fsd, &                        ! flag for tracing fsd
          tr_pnd, &                        ! flag for tracing ponds
          tr_pnd_topo, &                   ! flag for tracing topo ponds
-         tr_snoice                        ! flag for tracing snowice depth
+         tr_sni                           ! flag for tracing snowice depth
 
       integer (kind=dbl_kind), parameter :: num_3d_nfsd = 5
       character(len=16), parameter :: fld_3d_nfsd(num_3d_nfsd) = &
@@ -149,7 +149,7 @@
 #ifdef USE_NETCDF
       call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
       call icepack_query_tracer_flags(tr_fsd_out=tr_fsd, tr_pond_out=tr_pnd, &
-         tr_pond_topo_out=tr_pnd_topo)
+         tr_pond_topo_out=tr_pnd_topo, tr_snoice_out=tr_sni)
       if (first_call) then
          timcnt = 0
          write(hist_file,'(a,i8.8,a)') './history/icepack.h.',idate,'.nc'
@@ -506,7 +506,7 @@
          enddo
       endif !tr_pnd
 
-      if (tr_snoice) then
+      if (tr_sni) then 
          call  icepack_query_tracer_indices(nt_hsnoice_out = nt_hsnoice)
                   start3(1) = 1
          count3(1) = nx
@@ -529,7 +529,7 @@
          deallocate(value3)
          enddo
 
-      endif ! tr_snoice
+      endif ! tr_sni
 
       if (tr_fsd) then
         ! 3d nfsd fields

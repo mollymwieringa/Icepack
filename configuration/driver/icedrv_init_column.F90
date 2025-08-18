@@ -134,7 +134,7 @@
 
       logical (kind=log_kind) :: tr_brine, tr_zaero, tr_bgc_N
       integer (kind=int_kind) :: nt_alvl, nt_apnd, nt_hpnd, nt_ipnd, nt_aero, &
-         nt_fbri, nt_tsfc, nt_rsnw, ntrcr, nbtrcr_sw, nlt_chl_sw
+         nt_fbri, nt_tsfc, nt_rsnw, ntrcr, nbtrcr_sw, nlt_chl_sw, nt_hsnoice
       integer (kind=int_kind), dimension(icepack_max_aero) :: nlt_zaero_sw
       integer (kind=int_kind), dimension(icepack_max_aero) :: nt_zaero
       integer (kind=int_kind), dimension(icepack_max_algae) :: nt_bgc_N
@@ -158,7 +158,7 @@
               nt_apnd_out=nt_apnd, nt_hpnd_out=nt_hpnd, &
               nt_ipnd_out=nt_ipnd, nt_aero_out=nt_aero, &
               nt_fbri_out=nt_fbri, nt_tsfc_out=nt_tsfc, &
-              nt_rsnw_out=nt_rsnw, &
+              nt_rsnw_out=nt_rsnw, nt_hsnoice_out=nt_hsnoice, &
               nt_bgc_N_out=nt_bgc_N, nt_zaero_out=nt_zaero, &
               nlt_chl_sw_out=nlt_chl_sw, nlt_zaero_sw_out=nlt_zaero_sw)
          call icepack_warnings_flush(nu_diag)
@@ -255,6 +255,7 @@
                          apndn=trcrn(i,nt_apnd,:),             &
                          hpndn=trcrn(i,nt_hpnd,:),             &
                          ipndn=trcrn(i,nt_ipnd,:),             &
+                         hsnoicen=trcrn(i,nt_hsnoice,:),       &
                          aeron=trcrn(i,nt_aero:nt_aero+4*n_aero-1,:), &
                          bgcNn=trcrn(i,nt_bgc_N(1):nt_bgc_N(1)+n_algae*(nblyr+3)-1,:), &
                          zaeron=trcrn(i,nt_zaero(1):nt_zaero(1)+n_zaero*(nblyr+3)-1,:), &
