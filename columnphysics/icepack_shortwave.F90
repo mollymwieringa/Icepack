@@ -2127,8 +2127,8 @@
          enddo
       endif
 
-!      if (tr_snoice .and. (hsnoice>dz_ssl)) then
-      if (.false. .and. (hsnoice>dz_ssl)) then
+      if (tr_snoice .and. (hsnoice>dz_ssl)) then
+!      if (.false. .and. (hsnoice>dz_ssl)) then
           ! compute fractional overlap of snowice and radiation layers starting with DL
          if (hsnoice<dz) then  ! if snoice depth ends within DL
             wsi(kii+1)= (hsnoice-dz_ssl)/dzk(kii+1) ! DL layer fraction w/i snowice
