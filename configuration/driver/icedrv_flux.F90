@@ -63,7 +63,8 @@
          dardg2dt, & ! rate of area gain by new ridges (1/s)
          dvirdgdt, & ! rate of ice volume ridged (m/s)
          closing,  & ! rate of closing due to divergence/shear (1/s)
-         opening     ! rate of opening due to divergence/shear (1/s)
+         opening,  & ! rate of opening due to divergence/shear (1/s)
+         hosing      
 
       real (kind=dbl_kind), &
          dimension (nx,ncat), public :: &
@@ -209,7 +210,8 @@
          melttn      , & ! top melt in category n (m)
          meltbn      , & ! bottom melt in category n (m)
          congeln     , & ! congelation ice formation in category n (m)
-         snoicen         ! snow-ice formation in category n (m)
+         snoicen     , & ! snow-ice formation in category n (m)
+         hoseicen        ! snow-ice formation in category n (m)
 
       real (kind=dbl_kind), dimension (nx,ncat), public :: &
          keffn_top       ! effective thermal conductivity of the top ice layer
@@ -243,6 +245,7 @@
          congel, & ! basal ice growth         (m/step-->cm/day)
          frazil, & ! frazil ice growth        (m/step-->cm/day)
          snoice, & ! snow-ice formation       (m/step-->cm/day)
+         hoseice, & ! hosing snow-ice formation       (m/step-->cm/day)
          meltt , & ! top ice melt             (m/step-->cm/day)
          melts , & ! snow melt                (m/step-->cm/day)
          meltb , & ! basal ice melt           (m/step-->cm/day)
@@ -688,6 +691,8 @@
       congel (:) = c0
       frazil (:) = c0
       snoice (:) = c0
+      Tsnice (:) = c0
+      hoseice (:) = c0
       dsnow  (:) = c0
       meltt  (:) = c0
       melts  (:) = c0

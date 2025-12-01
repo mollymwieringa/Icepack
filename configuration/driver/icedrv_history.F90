@@ -50,7 +50,7 @@
       use icedrv_flux, only: evap, fsnow, frain, frazil
       use icedrv_flux, only: fswabs, flw, flwout, fsens, fsurf, flat
       use icedrv_flux, only: Tair, Qa, fsw, fcondtop
-      use icedrv_flux, only: meltt, meltb, meltl, melts, snoice
+      use icedrv_flux, only: meltt, meltb, meltl, melts, snoice, hoseice
       use icedrv_flux, only: dpnd_flushn, dpnd_exponn, dpnd_freebdn, dpnd_initialn, dpnd_dlidn
       use icedrv_flux, only: dpnd_flush, dpnd_expon, dpnd_freebd, dpnd_initial, dpnd_dlid
       use icedrv_flux, only: dpnd_melt, dpnd_ridge
@@ -75,7 +75,8 @@
          status, &                       ! cdf status flag
          iflag, &                        ! history file attributes
          numvars, &                      ! temporary for writing fields
-         nt_apnd, nt_hpnd, nt_ipnd       ! pond tracer indices
+         nt_apnd, nt_hpnd, nt_ipnd, &    ! pond tracer indices
+         nt_hsnoice
 
       character (len=8) :: &
          cdate                           ! date string
@@ -85,7 +86,7 @@
       real (kind=dbl_kind),allocatable :: &
          value1(:), value2(:,:), value3(:,:,:), value4(:,:,:,:)  ! temporary
 
-      integer (kind=dbl_kind), parameter :: num_2d = 33
+      integer (kind=dbl_kind), parameter :: num_2d = 34
       character(len=16), parameter :: fld_2d(num_2d) = &
          (/ 'aice            ', 'vice            ', 'vsno            ', &
             'uvel            ', 'vvel            ', 'divu            ', &
@@ -96,6 +97,7 @@
             'frain           ', 'Tair            ', 'Qa              ', &
             'fsw             ', 'fcondtop        ', 'meltt           ', &
             'meltb           ', 'meltl           ', 'snoice          ', &
+            'hoseice         ', &
             'dsnow           ', 'congel          ', 'sst             ', &
             'sss             ', 'Tf              ', 'fhocn           ', &
             'melts           ' /)
@@ -114,19 +116,24 @@
       logical (kind=log_kind) :: &
          tr_fsd, &                        ! flag for tracing fsd
          tr_pnd, &                        ! flag for tracing ponds
-         tr_pnd_topo                      ! flag for tracing topo ponds
+         tr_pnd_topo, &                   ! flag for tracing topo ponds
+         tr_sni                           ! flag for tracing snowice depth
 
       integer (kind=dbl_kind), parameter :: num_3d_nfsd = 5
       character(len=16), parameter :: fld_3d_nfsd(num_3d_nfsd) = &
          (/ 'd_afsd_newi     ', 'd_afsd_latg     ', 'd_afsd_latm     ', &
             'd_afsd_wave     ', 'd_afsd_weld     ' /)
 
+      integer (kind=dbl_kind), parameter :: num_3d_snoice = 1
+      character(len=16), parameter :: fld_3d_snoice(num_3d_snoice) = &
+         (/ 'snoice          ' /)
+
       integer (kind=dbl_kind), parameter :: num_3d_pond = 8
       character(len=16), parameter :: fld_3d_pond(num_3d_pond) = &
          (/ 'apndn           ', 'hpndn           ', 'ipndn           ', &
             'dpnd_flushn     ', 'dpnd_exponn     ', 'dpnd_freebdn    ', &
             'dpnd_initialn   ', 'dpnd_dlidn      ' /)
-
+      
       integer (kind=dbl_kind), parameter :: num_3d_ntrcr = 1
       character(len=16), parameter :: fld_3d_ntrcr(num_3d_ntrcr) = &
          (/ 'trcr            ' /)
@@ -142,7 +149,7 @@
 #ifdef USE_NETCDF
       call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
       call icepack_query_tracer_flags(tr_fsd_out=tr_fsd, tr_pond_out=tr_pnd, &
-         tr_pond_topo_out=tr_pnd_topo)
+         tr_pond_topo_out=tr_pnd_topo, tr_snoice_out=tr_sni)
       if (first_call) then
          timcnt = 0
          write(hist_file,'(a,i8.8,a)') './history/icepack.h.',idate,'.nc'
@@ -382,6 +389,7 @@
          if (trim(fld_2d(n)) == 'meltl')    value2(1:count2(1),1) = meltl(1:count2(1))
          if (trim(fld_2d(n)) == 'melts')    value2(1:count2(1),1) = melts(1:count2(1))
          if (trim(fld_2d(n)) == 'snoice')   value2(1:count2(1),1) = snoice(1:count2(1))
+         if (trim(fld_2d(n)) == 'hoseice')  value2(1:count2(1),1) = hoseice(1:count2(1))
          if (trim(fld_2d(n)) == 'dsnow')    value2(1:count2(1),1) = dsnow(1:count2(1))
          if (trim(fld_2d(n)) == 'congel')   value2(1:count2(1),1) = congel(1:count2(1))
          if (trim(fld_2d(n)) == 'sst')      value2(1:count2(1),1) = sst(1:count2(1))
@@ -498,7 +506,32 @@
          enddo
       endif !tr_pnd
 
-     if (tr_fsd) then
+      if (tr_sni) then 
+         call  icepack_query_tracer_indices(nt_hsnoice_out = nt_hsnoice)
+                  start3(1) = 1
+         count3(1) = nx
+         start3(2) = 1
+         count3(2) = ncat
+         start3(3) = timcnt
+         count3(3) = 1
+
+         do n = 1,num_3d_snoice
+            allocate(value3(count3(1),count3(2),1))
+
+            value3 = -9999._dbl_kind
+            if (trim(fld_3d_snoice(n)) == 'snoice') value3(1:count3(1),1:count3(2),1) = trcrn(1:count3(1),nt_hsnoice,1:count3(2))
+
+            status = nf90_inq_varid(ncid,trim(fld_3d_snoice(n)),varid)
+            if (status /= nf90_noerr) call icedrv_system_abort(string=subname//' ERROR: inq_var '//trim(fld_3d_snoice(n)))
+            status = nf90_put_var(ncid,varid,value3,start=start3,count=count3)
+            if (status /= nf90_noerr) call icedrv_system_abort(string=subname//' ERROR: put_var '//trim(fld_3d_snoice(n)))
+
+         deallocate(value3)
+         enddo
+
+      endif ! tr_sni
+
+      if (tr_fsd) then
         ! 3d nfsd fields
 
         start3(1) = 1
