@@ -1536,13 +1536,17 @@
 
       sum = c0
       do n = 1, ncat
-         if (n < ncat) then
-            hinit(n) = p5*(hin_max(n-1) + hin_max(n)) ! m
-         else                ! n=ncat
-            hinit(n) = (hin_max(n-1) + c1) ! m
+         if (ncat == 1) then
+            ainit(n) = c1
+         else
+            if (n < ncat) then
+               hinit(n) = p5*(hin_max(n-1) + hin_max(n)) ! m
+            else                ! n=ncat
+               hinit(n) = (hin_max(n-1) + c1) ! m
+            endif
+            ! parabola, max at h=hbar, zero at h=0, 2*hbar
+            ainit(n) = max(c0, (c2*hbar*hinit(n) - hinit(n)**2))
          endif
-         ! parabola, max at h=hbar, zero at h=0, 2*hbar
-         ainit(n) = max(c0, (c2*hbar*hinit(n) - hinit(n)**2))
          sum = sum + ainit(n)
       enddo
       do n = 1, ncat
