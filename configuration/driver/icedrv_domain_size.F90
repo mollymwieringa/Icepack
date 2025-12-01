@@ -44,6 +44,7 @@
                   + nfsd        & ! number of floe size categories
                   + TRAGE       & ! age
                   + TRFY        & ! first-year area
+                  + TRSNOICE    & ! snowice depth
                   + TRLVL*2     & ! level/deformed ice
                   + TRPND*3     & ! ponds
                   + TRSNOW*4*nslyr & ! snow redistribution/metamorphism

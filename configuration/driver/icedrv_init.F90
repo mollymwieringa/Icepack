@@ -125,10 +125,10 @@
       logical (kind=log_kind) :: conserv_check, semi_implicit_Tsfc, vapor_flux_correction
 
       integer (kind=int_kind) :: ntrcr
-      logical (kind=log_kind) :: tr_iage, tr_FY, tr_lvl, tr_pond, tr_snow
+      logical (kind=log_kind) :: tr_iage, tr_FY, tr_lvl, tr_pond, tr_snow, tr_snoice
       logical (kind=log_kind) :: tr_iso, tr_aero, tr_fsd
       logical (kind=log_kind) :: tr_pond_lvl, tr_pond_topo, tr_pond_sealvl, wave_spec
-      integer (kind=int_kind) :: nt_Tsfc, nt_sice, nt_qice, nt_qsno, nt_iage, nt_FY
+      integer (kind=int_kind) :: nt_Tsfc, nt_sice, nt_qice, nt_qsno, nt_iage, nt_FY, nt_hsnoice
       integer (kind=int_kind) :: nt_alvl, nt_vlvl, nt_apnd, nt_hpnd, nt_ipnd, &
                                  nt_smice, nt_smliq, nt_rhos, nt_rsnw, &
                                  nt_aero, nt_fsd, nt_isosno, nt_isoice
@@ -210,6 +210,7 @@
         tr_pond_topo, &
         tr_pond_sealvl, &
         tr_snow,      &
+        tr_snoice,    &
         tr_aero,      &
         tr_fsd,       &
         tr_iso
@@ -329,6 +330,7 @@
       tr_pond_topo = .false. ! topographic melt ponds
       tr_pond_sealvl = .false. ! sealvl melt ponds
       tr_snow      = .false. ! snow tracers (wind redistribution, metamorphosis)
+      tr_snoice    = .false. ! cumulative snowice depth 
       tr_aero      = .false. ! aerosols
       tr_fsd       = .false. ! floe size distribution
       tr_iso       = .false. ! isotopes
@@ -860,6 +862,7 @@
          write(nu_diag,1010) ' tr_pond_topo              = ', tr_pond_topo
          write(nu_diag,1010) ' tr_pond_sealvl            = ', tr_pond_sealvl
          write(nu_diag,1010) ' tr_snow                   = ', tr_snow
+         write(nu_diag,1010) ' tr_snoice                 = ', tr_snoice
          write(nu_diag,1010) ' tr_aero                   = ', tr_aero
          write(nu_diag,1010) ' tr_fsd                    = ', tr_fsd
 
@@ -886,7 +889,12 @@
              ntrcr = ntrcr + 1
              nt_FY = ntrcr     ! area of first year ice
          endif
-
+         nt_hsnoice = max_ntrcr
+         if (tr_snoice) then
+             ntrcr = ntrcr + 1
+             nt_hsnoice = ntrcr     ! depth of snowice layer
+         endif
+         
          nt_alvl = max_ntrcr
          nt_vlvl = max_ntrcr
          if (tr_lvl) then
@@ -1055,14 +1063,14 @@
            nfsd_in=nfsd, n_iso_in=n_iso, n_aero_in=n_aero)
       call icepack_init_tracer_flags(tr_iage_in=tr_iage, &
            tr_FY_in=tr_FY, tr_lvl_in=tr_lvl, tr_aero_in=tr_aero, &
-           tr_iso_in=tr_iso, tr_snow_in=tr_snow, &
+           tr_iso_in=tr_iso, tr_snow_in=tr_snow, tr_snoice_in=tr_snoice, &
            tr_pond_in=tr_pond, &
            tr_pond_lvl_in=tr_pond_lvl, &
            tr_pond_topo_in=tr_pond_topo, &
            tr_pond_sealvl_in=tr_pond_sealvl, tr_fsd_in=tr_fsd)
       call icepack_init_tracer_indices(nt_Tsfc_in=nt_Tsfc, &
            nt_sice_in=nt_sice, nt_qice_in=nt_qice, &
-           nt_qsno_in=nt_qsno, nt_iage_in=nt_iage, &
+           nt_qsno_in=nt_qsno, nt_iage_in=nt_iage, nt_hsnoice_in=nt_hsnoice, &
            nt_fy_in=nt_fy, nt_alvl_in=nt_alvl, nt_vlvl_in=nt_vlvl, &
            nt_apnd_in=nt_apnd, nt_hpnd_in=nt_hpnd, nt_ipnd_in=nt_ipnd, &
            nt_smice_in=nt_smice, nt_smliq_in=nt_smliq, &
@@ -1148,8 +1156,8 @@
 
       integer (kind=int_kind) :: ntrcr
       logical (kind=log_kind) :: tr_iage, tr_FY, tr_lvl, tr_aero, tr_fsd, tr_iso
-      logical (kind=log_kind) :: tr_pond_lvl, tr_pond_topo, tr_pond_sealvl, tr_snow
-      integer (kind=int_kind) :: nt_Tsfc, nt_sice, nt_qice, nt_qsno, nt_iage, nt_fy
+      logical (kind=log_kind) :: tr_pond_lvl, tr_pond_topo, tr_pond_sealvl, tr_snow, tr_snoice
+      integer (kind=int_kind) :: nt_Tsfc, nt_sice, nt_qice, nt_qsno, nt_iage, nt_fy, nt_hsnoice
       integer (kind=int_kind) :: nt_alvl, nt_vlvl, nt_apnd, nt_hpnd, nt_ipnd, &
                                  nt_smice, nt_smliq, nt_rhos, nt_rsnw, &
                                  nt_aero, nt_fsd, nt_isosno, nt_isoice
@@ -1163,7 +1171,7 @@
          call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
          call icepack_query_tracer_flags(tr_iage_out=tr_iage, &
               tr_FY_out=tr_FY, tr_lvl_out=tr_lvl, tr_aero_out=tr_aero, &
-              tr_iso_out=tr_iso, tr_snow_out=tr_snow, &
+              tr_iso_out=tr_iso, tr_snow_out=tr_snow, tr_snoice_out=tr_snoice, &
               tr_pond_lvl_out=tr_pond_lvl, &
               tr_pond_topo_out=tr_pond_topo, &
               tr_pond_sealvl_out=tr_pond_sealvl, tr_fsd_out=tr_fsd)
@@ -1172,7 +1180,7 @@
               nt_qsno_out=nt_qsno, nt_iage_out=nt_iage, nt_fy_out=nt_fy, &
               nt_alvl_out=nt_alvl, nt_vlvl_out=nt_vlvl, &
               nt_apnd_out=nt_apnd, nt_hpnd_out=nt_hpnd, &
-              nt_ipnd_out=nt_ipnd, &
+              nt_ipnd_out=nt_ipnd, nt_hsnoice_out=nt_hsnoice, &
               nt_smice_out=nt_smice, nt_smliq_out=nt_smliq, &
               nt_rhos_out=nt_rhos, nt_rsnw_out=nt_rsnw, &
               nt_isosno_out=nt_isosno, nt_isoice_out=nt_isoice, &
@@ -1208,6 +1216,7 @@
       do k = 1, nslyr
          trcr_depend(nt_qsno + k - 1) = 2 ! volume-weighted snow enthalpy
       enddo
+      if (tr_snoice) trcr_depend(nt_hsnoice)  = 1   ! volume-weighted snowice layer depth
       if (tr_iage) trcr_depend(nt_iage)  = 1   ! volume-weighted ice age
       if (tr_FY)   trcr_depend(nt_FY)    = 0   ! area-weighted first-year ice area
       if (tr_lvl)  trcr_depend(nt_alvl)  = 0   ! level ice area

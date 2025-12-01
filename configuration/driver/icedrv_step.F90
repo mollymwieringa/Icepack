@@ -115,7 +115,7 @@
       use icedrv_domain_size, only: ncat, nilyr, nslyr, n_aero, n_iso, nfsd, nx
       use icedrv_flux, only: frzmlt, sst, Tf, strocnxT, strocnyT, rsiden, wlat, &
                              fbot, Tbot, Tsnice
-      use icedrv_flux, only: meltsn, melttn, meltbn, congeln, snoicen, hsnoicen, uatm, vatm
+      use icedrv_flux, only: meltsn, melttn, meltbn, congeln, snoicen, hoseicen, uatm, vatm
       use icedrv_flux, only: wind, rhoa, potT, Qa, Qa_iso, zlvl, strax, stray, flatn
       use icedrv_flux, only: fsensn, fsurfn, fcondtopn, fcondbotn
       use icedrv_flux, only: flw, fsnow, fpond, sss, mlt_onset, frz_onset, fsloss
@@ -123,7 +123,7 @@
       use icedrv_flux, only: fcondtop, fcondbot, fsens, fresh, fsalt, fhocn
       use icedrv_flux, only: flat, fswabs, flwout, evap, evaps, evapi
       use icedrv_flux, only: Tref, Qref, Qref_iso, Uref
-      use icedrv_flux, only: meltt, melts, meltb, congel, snoice, hsnoice
+      use icedrv_flux, only: meltt, melts, meltb, congel, snoice, hoseice
       use icedrv_flux, only: fswthru, fswthru_vdr, fswthru_vdf, fswthru_idr, fswthru_idf
       use icedrv_flux, only: flatn_f, fsensn_f, fsurfn_f, fcondtopn_f
       use icedrv_flux, only: dsnow, dsnown, faero_atm, faero_ocn
@@ -155,7 +155,7 @@
       integer (kind=int_kind) :: &
          ntrcr, nt_apnd, nt_hpnd, nt_ipnd, nt_alvl, nt_vlvl, nt_Tsfc, &
          nt_iage, nt_FY, nt_qice, nt_sice, nt_qsno, nt_fsd, &
-         nt_aero, nt_isosno, nt_isoice, nt_rsnw, nt_smice, nt_smliq
+         nt_aero, nt_isosno, nt_isoice, nt_rsnw, nt_smice, nt_smliq, nt_hsnoice
 
       logical (kind=log_kind) :: &
          tr_iage, tr_FY, tr_aero, tr_iso, calc_Tsfc, snwgrain
@@ -205,6 +205,7 @@
          nt_qice_out=nt_qice, nt_sice_out=nt_sice, &
          nt_aero_out=nt_aero, nt_qsno_out=nt_qsno, &
          nt_rsnw_out=nt_rsnw, nt_smice_out=nt_smice, nt_smliq_out=nt_smliq, &
+         nt_hsnoice_out=nt_hsnoice, &
          nt_isosno_out=nt_isosno, nt_isoice_out=nt_isoice, nt_fsd_out=nt_fsd)
       call icepack_warnings_flush(nu_diag)
       if (icepack_warnings_aborted()) call icedrv_system_abort(string=subname, &
@@ -372,8 +373,8 @@
             melts    = melts(i),      meltsn    = meltsn(i,:),    &
             congel   = congel(i),     congeln   = congeln(i,:),   &
             snoice   = snoice(i),     snoicen   = snoicen(i,:),   &
-            hsnoice  = hsnoice(i),    hsnoicen  = hsnoicen(i,:),   &
-            HOSE     = HOSE, &
+            hoseice  = hoseice(i),    hoseicen  = hoseicen(i,:),   &
+            HOSE     = HOSE,          cumsnoice = trcrn(i,nt_hsnoice,:),  &
             dsnow    = dsnow(i),      dsnown    = dsnown(i,:),    &
             meltsliqn= meltsliqn(i,:), &
             afsdn         = trcrn       (i,nt_fsd:nt_fsd+nfsd-1,:), &
@@ -1055,7 +1056,7 @@
       integer (kind=int_kind) :: &
          max_aero, max_algae, nt_Tsfc, nt_alvl, &
          nt_apnd, nt_hpnd, nt_ipnd, nt_aero, nlt_chl_sw, &
-         ntrcr, nbtrcr_sw, nt_fbri, nt_rsnw
+         ntrcr, nbtrcr_sw, nt_fbri, nt_rsnw, nt_hsnoice
 
       integer (kind=int_kind), dimension(:), allocatable :: &
          nlt_zaero_sw, nt_zaero, nt_bgc_N
@@ -1103,7 +1104,7 @@
            nt_Tsfc_out=nt_Tsfc, nt_alvl_out=nt_alvl, nt_apnd_out=nt_apnd, &
            nt_hpnd_out=nt_hpnd, nt_ipnd_out=nt_ipnd, nt_aero_out=nt_aero, &
            nlt_chl_sw_out=nlt_chl_sw, nlt_zaero_sw_out=nlt_zaero_sw, &
-           nt_rsnw_out=nt_rsnw, &
+           nt_rsnw_out=nt_rsnw, nt_hsnoice_out=nt_hsnoice, &
            nt_fbri_out=nt_fbri, nt_zaero_out=nt_zaero, nt_bgc_N_out=nt_bgc_N)
       call icepack_warnings_flush(nu_diag)
       if (icepack_warnings_aborted()) call icedrv_system_abort(string=subname, &
@@ -1142,6 +1143,7 @@
                          apndn=trcrn(i,nt_apnd,:),                      &
                          hpndn=trcrn(i,nt_hpnd,:),                      &
                          ipndn=trcrn(i,nt_ipnd,:),                      &
+                         hsnoicen=trcrn(i,nt_hsnoice,:),                &
                          aeron=trcrn(i,nt_aero:nt_aero+4*n_aero-1,:),   &
                          bgcNn=trcrn(i,nt_bgc_N(1):nt_bgc_N(1)+n_algae*(nblyr+3)-1,:), &
                          zaeron=trcrn(i,nt_zaero(1):nt_zaero(1)+n_zaero*(nblyr+3)-1,:), &

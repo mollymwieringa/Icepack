@@ -60,10 +60,10 @@
                                fswthru_idr, fswthru_idf,&
                                fswthru_uvrdr, fswthru_uvrdf,&
                                fswthru_pardr, fswthru_pardf,&
-                               melttn, meltsn, meltbn, congeln, snoicen, hsnoicen, &
+                               melttn, meltsn, meltbn, congeln, snoicen, hoseicen, &
                                meltt,  melts,        &
                                meltb,  dsnow, dsnown,&
-                               congel,  snoice,  hsnoice,    &
+                               congel,  snoice,  hoseice,    &
                                meltsliq, meltsliqn,  &
                                Uref,     Urefn,      &
                                Qref_iso, Qrefn_iso,  &
@@ -107,7 +107,7 @@
           dsnown  , & ! change in snow depth            (m)
           congeln , & ! congelation ice growth          (m)
           snoicen , & ! snow-ice growth                 (m)
-          hsnoicen , & ! snow-ice growth from hosing    (m)
+          hoseicen , & ! snow-ice growth from hosing    (m)
           dpnd_flushn , & ! pond flushing rate due to ice permeability (m/step)
           dpnd_exponn , & ! exponential pond drainage rate (m/step)
           dpnd_freebdn, & ! pond drainage rate due to freeboard constraint (m/step)
@@ -150,7 +150,7 @@
           meltsliq, & ! mass of snow melt               (kg/m^2)
           congel  , & ! congelation ice growth          (m)
           snoice  , & ! snow-ice growth                 (m)
-          hsnoice  , & ! snow-ice growth from hosing    (m)
+          hoseice  , & ! snow-ice growth from hosing    (m)
           dpnd_flush , & ! pond flushing rate due to ice permeability (m/step)
           dpnd_expon , & ! exponential pond drainage rate (m/step)
           dpnd_freebd, & ! pond drainage rate due to freeboard constraint (m/step)
@@ -285,8 +285,8 @@
          congel    = congel    + congeln   * aicen
       if (present(snoicen) .and. present(snoice)) &
          snoice    = snoice    + snoicen   * aicen
-      if (present(hsnoicen) .and. present(hsnoice)) &
-         hsnoice    = hsnoice    + hsnoicen   * aicen
+      if (present(hoseicen) .and. present(hoseice)) &
+         hoseice    = hoseice    + hoseicen   * aicen
       ! Meltwater fluxes
       if (tr_pond) then
          if (present(dpnd_flushn)  .and. present(dpnd_flush))   &
