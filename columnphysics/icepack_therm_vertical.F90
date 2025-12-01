@@ -108,6 +108,7 @@
                                   smice,       massice,   &
                                   smliq,       massliq,   &
                                   congel,      snoice,    &
+                                  HOSE,        hoseice,   &
                                   mlt_onset,   frz_onset, &
                                   yday,        dsnow,     &
                                   prescribed_ice,         &
@@ -169,7 +170,8 @@
          fbot    , & ! ice-ocean heat flux at bottom surface (W/m^2)
          Tbot    , & ! ice bottom surface temperature (deg C)
          sst     , & ! sea surface temperature (C)
-         sss         ! ocean salinity
+         sss     , & ! ocean salinity
+         HOSE        ! amnt to hose per step in m
 
       ! coupler fluxes to atmosphere
       real (kind=dbl_kind), intent(out):: &
@@ -201,6 +203,7 @@
          meltb    , & ! basal ice melt           (m/step-->cm/day)
          congel   , & ! basal ice growth         (m/step-->cm/day)
          snoice   , & ! snow-ice formation       (m/step-->cm/day)
+         hoseice  , & ! snow-ice formation from hosing (m/step-->cm/day)
          dsnow    , & ! change in snow thickness (m/step-->cm/day)
          mlt_onset, & ! day of year that sfc melting begins
          frz_onset, & ! day of year that freezing begins (congel or frazil)
@@ -266,6 +269,7 @@
       melts   = c0
       congel  = c0
       snoice  = c0
+      hoseice  = c0
       dsnow   = c0
       zTsn(:) = c0
       zTin(:) = c0
@@ -334,6 +338,7 @@
                                               flwoutn,   fsurfn,    &
                                               fcondtopn, fcondbotn, &
                                               fadvocn,   snoice,    &
+                                              HOSE,      hoseice,   &
                                               smice,     smliq,     &
                                               dpnd_flush,dpnd_expon)
             if (icepack_warnings_aborted(subname)) return
@@ -2256,6 +2261,8 @@
                                     melts       , meltsn      , &
                                     congel      , congeln     , &
                                     snoice      , snoicen     , &
+                                    hoseice     , hoseicen    , &
+                                    HOSE        , cumsnoice   , &
                                     dsnow       , dsnown      , &
                                     meltsliq    , meltsliqn   , &
                                     rsnwn       , &
@@ -2276,6 +2283,7 @@
          vvel        , & ! y-component of velocity              (m/s)
          strax       , & ! wind stress components             (N/m^2)
          stray       , & !
+         HOSE        , & ! hosing rate in m
          yday            ! day of year
 
       logical (kind=log_kind), intent(in) :: &
@@ -2317,6 +2325,7 @@
          evapi       , & ! evaporative water flux over ice (kg/m^2/s)
          congel      , & ! basal ice growth         (m/step-->cm/day)
          snoice      , & ! snow-ice formation       (m/step-->cm/day)
+         hoseice     , & ! snow-ice formation from hosing (m/step-->cm/day)
          Tref        , & ! 2m atm reference temperature           (K)
          Qref        , & ! 2m atm reference spec humidity     (kg/kg)
          Uref        , & ! 10m atm reference wind speed         (m/s)
@@ -2439,7 +2448,9 @@
          melttn      , & ! top ice melt                           (m)
          meltbn      , & ! bottom ice melt                        (m)
          congeln     , & ! congelation ice growth                 (m)
-         snoicen         ! snow-ice growth                        (m)
+         snoicen     , & ! snow-ice growth                        (m)
+         hoseicen    , & ! snow-ice growth from hosing            (m)
+         cumsnoice       ! snow-ice layer depth tracer (snoice+hoseice) (m)
 
       real (kind=dbl_kind), dimension(:), intent(inout), optional :: &
          dpnd_flushn , & ! category pond flushing rate          (m/step)
@@ -2746,6 +2757,7 @@
          meltbn (n) = c0
          congeln(n) = c0
          snoicen(n) = c0
+         hoseicen(n) = c0
          l_dpnd_flushn   = c0
          l_dpnd_exponn   = c0
          l_dpnd_freebdn  = c0
@@ -2892,6 +2904,7 @@
                                  smice=smice,         massice=massicen  (:,n), &
                                  smliq=smliq,         massliq=massliqn  (:,n), &
                                  congel=congeln  (n), snoice=snoicen      (n), &
+                                 HOSE = HOSE        , hoseice=hoseicen    (n), &
                                  mlt_onset=mlt_onset, frz_onset=frz_onset,     &
                                  yday=yday,           dsnow=l_dsnown         , &
                                  prescribed_ice=prescribed_ice,                &
@@ -3092,6 +3105,9 @@
             if (present(fswthrun_pardr)) l_fswthrun_pardr = fswthrun_pardr(n)
             if (present(fswthrun_pardf)) l_fswthrun_pardf = fswthrun_pardf(n)
 
+            cumsnoice(n) = cumsnoice(n)+snoicen(n)+hoseicen(n)-melttn(n) 
+            cumsnoice(n) = max(cumsnoice(n),c0)
+            
             call merge_fluxes (aicen=aicen_init(n),            &
                                flw=flw, &
                                strairxn=strairxn, strairyn=strairyn,&
@@ -3138,8 +3154,10 @@
                                meltbn=meltbn (n), congeln=congeln(n),&
                                meltt=meltt,       melts=melts,      &
                                meltb=meltb,       snoicen=snoicen(n),&
+                               hoseicen=hoseicen(n), &
                                dsnow=l_dsnow,     dsnown=l_dsnown,  &
                                congel=congel,     snoice=snoice,    &
+                               hoseice=hoseice, &
                                meltsliq=l_meltsliq,                 &
                                meltsliqn=l_meltsliqn(n),            &
                                Uref=Uref,         Urefn=Urefn,      &

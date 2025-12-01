@@ -26,6 +26,7 @@
           write_restart_lvl,       read_restart_lvl, &
           write_restart_pond_lvl,  read_restart_pond_lvl, &
           write_restart_pond_topo, read_restart_pond_topo, &
+          write_restart_snoice,    read_restart_snoice, &
           write_restart_snow,      read_restart_snow, &
           write_restart_fsd,       read_restart_fsd, &
           write_restart_iso,       read_restart_iso, &
@@ -88,7 +89,7 @@
          nt_Tsfc, nt_sice, nt_qice, nt_qsno
 
       logical (kind=log_kind) :: &
-         tr_iage, tr_FY, tr_lvl, tr_iso, tr_aero, tr_brine, &
+         tr_iage, tr_FY, tr_lvl, tr_iso, tr_aero, tr_brine, tr_snoice, &
          tr_pond_topo, tr_pond_lvl, tr_pond_sealvl, tr_snow, tr_fsd
 !         skl_bgc, z_tracers
 
@@ -115,7 +116,7 @@
 
      call icepack_query_tracer_flags(tr_iage_out=tr_iage, tr_FY_out=tr_FY, &
           tr_lvl_out=tr_lvl, tr_aero_out=tr_aero, tr_iso_out=tr_iso, &
-          tr_brine_out=tr_brine, &
+          tr_brine_out=tr_brine, tr_snoice_out=tr_snoice, &
           tr_pond_topo_out=tr_pond_topo, &
           tr_pond_lvl_out=tr_pond_lvl, &
           tr_pond_sealvl_out=tr_pond_sealvl, &
@@ -223,6 +224,7 @@
       if (tr_pond_topo) call write_restart_pond_topo(dims) ! topographic melt ponds
       if (tr_pond_sealvl) call write_restart_pond_sealvl(dims) ! same restart fields as lvl
       if (tr_snow)      call write_restart_snow(dims)      ! snow metamorphosis tracers
+      if (tr_snoice)    call write_restart_snoice(dims)    ! snowice depth tracer
       if (tr_iso)       call write_restart_iso(dims)       ! ice isotopes
       if (tr_aero)      call write_restart_aero(dims)      ! ice aerosols
       if (tr_brine)     call write_restart_hbrine(dims)    ! brine height
@@ -279,7 +281,7 @@
          nt_Tsfc, nt_sice, nt_qice, nt_qsno
 
       logical (kind=log_kind) :: &
-         tr_iage, tr_FY, tr_lvl, tr_iso, tr_aero, tr_brine, &
+         tr_iage, tr_FY, tr_lvl, tr_iso, tr_aero, tr_brine, tr_snoice, &
          tr_pond_topo, tr_pond_lvl, tr_pond_sealvl, tr_snow, tr_fsd
 
       character(len=char_len_long) :: filename
@@ -295,7 +297,7 @@
       call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
       call icepack_query_tracer_flags(tr_iage_out=tr_iage, tr_FY_out=tr_FY, &
            tr_lvl_out=tr_lvl, tr_aero_out=tr_aero, tr_iso_out=tr_iso, &
-           tr_brine_out=tr_brine, &
+           tr_brine_out=tr_brine, tr_snoice_out=tr_snoice, &
            tr_pond_topo_out=tr_pond_topo, &
            tr_pond_lvl_out=tr_pond_lvl, &
            tr_pond_sealvl_out=tr_pond_sealvl, &
@@ -403,6 +405,7 @@
       if (tr_pond_sealvl) call read_restart_pond_sealvl() ! sealvl ponds same as lvl
       if (tr_pond_topo) call read_restart_pond_topo() ! topographic melt ponds
       if (tr_snow)      call read_restart_snow()      ! snow metamorphosis tracers
+      if (tr_snoice)    call read_restart_snoice()    ! snowice tracer
       if (tr_iso)       call read_restart_iso()       ! ice isotopes
       if (tr_aero)      call read_restart_aero()      ! ice aerosols
       if (tr_brine)     call read_restart_hbrine      ! brine height
@@ -881,6 +884,52 @@
       call read_restart_field(nu_restart,frz_onset,1,'frz_onset')
 
       end subroutine read_restart_FY
+
+!=======================================================================
+
+! Dumps all values needed for restarting
+
+      subroutine write_restart_snoice(dims)
+
+      use icedrv_state, only: trcrn
+      use icedrv_domain_size, only: ncat
+
+      integer (kind=int_kind), intent(in), optional :: &
+         dims(:)           ! netcdf dimension IDs
+
+      integer (kind=int_kind) :: nt_hsnoice
+      character(len=*), parameter :: subname='(write_restart_snoice)'
+
+      call icepack_query_tracer_indices(nt_hsnoice_out=nt_hsnoice)
+      call icepack_warnings_flush(nu_diag)
+      if (icepack_warnings_aborted()) call icedrv_system_abort(string=subname, &
+          file=__FILE__,line= __LINE__)
+
+      call write_restart_field(nu_dump,trcrn(:,nt_hsnoice,:),ncat,'hsnoice',dims)
+
+      end subroutine write_restart_snoice
+
+!=======================================================================
+
+! Reads all values needed for an ice snoice restart
+
+      subroutine read_restart_snoice()
+
+      use icedrv_state, only: trcrn
+      use icedrv_domain_size, only: ncat
+      integer (kind=int_kind) :: nt_hsnoice
+      character(len=*), parameter :: subname='(read_restart_snoice)'
+
+      call icepack_query_tracer_indices(nt_hsnoice_out=nt_hsnoice)
+      call icepack_warnings_flush(nu_diag)
+      if (icepack_warnings_aborted()) call icedrv_system_abort(string=subname, &
+          file=__FILE__,line= __LINE__)
+
+      write(nu_diag,*) 'min/max snowice depth'
+
+      call read_restart_field(nu_restart,trcrn(:,nt_hsnoice,:),ncat,'hsnoice')
+
+      end subroutine read_restart_snoice
 
 !=======================================================================
 

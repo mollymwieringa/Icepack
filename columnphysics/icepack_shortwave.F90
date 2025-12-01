@@ -58,7 +58,7 @@
       use icepack_tracers,    only: ncat, nilyr, nslyr, nblyr
       use icepack_tracers,    only: ntrcr, nbtrcr_sw
       use icepack_tracers,    only: tr_pond_lvl, tr_pond_topo, tr_pond_sealvl
-      use icepack_tracers,    only: tr_lvl
+      use icepack_tracers,    only: tr_lvl, tr_snoice
       use icepack_tracers,    only: tr_bgc_N, tr_aero
       use icepack_tracers,    only: nt_bgc_N, nt_zaero
       use icepack_tracers,    only: tr_zaero, nlt_chl_sw, nlt_zaero_sw
@@ -912,7 +912,7 @@
                           vsnon,    Tsfcn,     &
                           alvln,    apndn,     &
                           hpndn,    ipndn,     &
-                          aeron,               &
+                          hsnoicen, aeron,     &
                           trcrn_bgcsw,         &
                           TLAT,     TLON,      &
                           calendar_type,       &
@@ -986,6 +986,7 @@
          apndn, & ! pond area fraction
          hpndn, & ! pond depth (m)
          ipndn, & ! pond refrozen lid thickness (m)
+         hsnoicen, & ! snow-ice layer depth (m)
          ffracn   ! fraction of fsurfn used to melt ipond
 
       real(kind=dbl_kind), dimension(:,:), intent(in) :: &
@@ -1190,7 +1191,7 @@
                              hsn,           fsn,            &
                              rhosnwn,       rsnwn,          &
                              fpn,           hpn,            &
-                             aeron(:,n),                    &
+                             aeron(:,n),    hsnoicen(n),    &
                              swvdr,         swvdf,          &
                              swidr,         swidf,          &
                              alvdrn(n),     alvdfn(n),      &
@@ -1274,7 +1275,7 @@
                                   hs,       fs,          &
                                   rhosnw,   rsnw,        &
                                   fp,       hp,          &
-                                  aero,                  &
+                                  aero,     hsnoice,     &
                                   swvdr,    swvdf,       &
                                   swidr,    swidf,       &
                                   alvdr,    alvdf,       &
@@ -1312,6 +1313,7 @@
       real (kind=dbl_kind), intent(in) :: &
          fp      , & ! pond fractional coverage (0 to 1)
          hp      , & ! pond depth (m)
+         hsnoice , & ! snow ice layer depth (m)
          swvdr   , & ! sw down, visible, direct  (W/m^2)
          swvdf   , & ! sw down, visible, diffuse (W/m^2)
          swidr   , & ! sw down, near IR, direct  (W/m^2)
@@ -1478,7 +1480,7 @@
                       klev,   klevp,   zbio,   fnidr,  coszen,  &
                       swvdr,  swvdf,   swidr,  swidf,  srftyp,  &
                       hstmp,  rhosnw,  rsnw,   hi,     hp,      &
-                      fi,     aero_mp, avdrl,  avdfl,           &
+                      hsnoice, fi,     aero_mp, avdrl,  avdfl,  &
                       aidrl,  aidfl,   fswsfc, fswint, fswthru, &
                       fswthru_vdr,     fswthru_vdf,             &
                       fswthru_idr,     fswthru_idf,             &
@@ -1525,7 +1527,7 @@
                       klev,   klevp,   zbio,   fnidr,  coszen,  &
                       swvdr,  swvdf,   swidr,  swidf,  srftyp,  &
                       hs,     rhosnw,  rsnw,   hi,     hp,      &
-                      fs,     aero_mp, avdrl,  avdfl,           &
+                      hsnoice, fs,     aero_mp, avdrl,  avdfl,  &
                       aidrl,  aidfl,   fswsfc, fswint, fswthru, &
                       fswthru_vdr,     fswthru_vdf,             &
                       fswthru_idr,     fswthru_idf,             &
@@ -1565,7 +1567,7 @@
                       klev,   klevp,   zbio,   fnidr,  coszen,  &
                       swvdr,  swvdf,   swidr,  swidf,  srftyp,  &
                       hs,     rhosnw,  rsnw,   hi,     hp,      &
-                      fp,     aero_mp, avdrl,  avdfl,           &
+                      hsnoice, fp,     aero_mp, avdrl,  avdfl,  &
                       aidrl,  aidfl,   fswsfc, fswint, fswthru, &
                       fswthru_vdr,     fswthru_vdf,             &
                       fswthru_idr,     fswthru_idf,             &
@@ -1678,7 +1680,7 @@
                       klev,   klevp,   zbio,   fnidr,  coszen,  &
                       swvdr,  swvdf,   swidr,  swidf,  srftyp,  &
                       hs,     rhosnw,  rsnw,   hi,     hp,      &
-                      fi,     aero_mp, alvdr,  alvdf,           &
+                      hsnoice, fi,     aero_mp, alvdr,  alvdf,  &
                       alidr,  alidf,   fswsfc, fswint, fswthru, &
                       fswthru_vdr,     fswthru_vdf,             &
                       fswthru_idr,     fswthru_idf,             &
@@ -1715,6 +1717,7 @@
       real (kind=dbl_kind), intent(in) :: &
          hi    , & ! ice thickness (m)
          hp    , & ! pond depth (m)
+         hsnoice , & ! snow-ice layer depth (m)
          fi        ! snow/bare ice fractional coverage (0 to 1)
 
       real (kind=dbl_kind), intent(inout) :: &
@@ -1951,6 +1954,12 @@
       real (kind=dbl_kind), dimension(0:klev) :: &
          dzk         ! layer thickness
 
+      real (kind=dbl_kind), dimension(0:klev) :: &
+         wsi     ! fraction of radiation layer that is within snow-ice layer
+
+      real (kind=dbl_kind) :: &
+         ki_mix, wi_mix  ! modified ice k and w to account for snow-ice layer
+      
       real (kind=dbl_kind) :: &
          dz      , & ! snow, sea ice or pond water layer thickness
          dz_ssl  , & ! snow or sea ice surface scattering layer thickness
@@ -2098,6 +2107,7 @@
       endif
 
       ! ice
+      wsi(:) = c0 ! initialize all snow ice layer weights to zero 
       dz = hi*rnilyr
       ! empirical reduction in sea ice ssl thickness for ice thinner than 1.5m;
       ! factor of 30 gives best albedo comparison with limited observations
@@ -2117,6 +2127,25 @@
          enddo
       endif
 
+      if (tr_snoice .and. (hsnoice>dz_ssl)) then
+!      if (.false. .and. (hsnoice>dz_ssl)) then
+          ! compute fractional overlap of snowice and radiation layers starting with DL
+         if (hsnoice<dz) then  ! if snoice depth ends within DL
+            wsi(kii+1)= (hsnoice-dz_ssl)/dzk(kii+1) ! DL layer fraction w/i snowice
+         else
+           wsi(kii+1)= c1      ! otherwise make DL=SSL layer
+           do k = kii+2, klev
+              if ( hsnoice < ((k-1)*dz) ) then ! get out if snow-ice layer not > rad layer
+                EXIT                           
+              endif
+              wsi(k)= min((hsnoice-dz*(k-1))/dz,c1 ) ! interior layer fraction w/i snowice
+           enddo
+         endif
+      endif
+!      wsi(kii+1:klev)= c1 ! not realistic but testing max possible effect
+
+!      write(*,*) 'SSL ', hsnoice, wsi(kii+1:klev)
+      
       ! adjust sea ice iops with tuning parameters; tune only the
       ! scattering coefficient by factors of R_ice, R_pnd, where
       ! R values of +1 correspond approximately to +1 sigma changes in albedo, and
@@ -2516,14 +2545,22 @@
             k = kii + 1
             ! scale dz for dl relative to 4 even-layer-thickness 1.5m case
             fs = p25*real(nilyr,kind=dbl_kind)
-            tau(k) =           (ki_dl(ns) + kabs_chl(ns,k)) * dzk(k) * fs
-            w0 (k) = ki_dl(ns)/(ki_dl(ns) + kabs_chl(ns,k)) * wi_dl(ns)
+!            tau(k) =           (ki_dl(ns) + kabs_chl(ns,k)) * dzk(k) * fs
+!            w0 (k) = ki_dl(ns)/(ki_dl(ns) + kabs_chl(ns,k)) * wi_dl(ns)
+            ki_mix = ki_dl(ns)*(c1-wsi(k))+ ki_ssl(ns)*wsi(k)
+            wi_mix = wi_dl(ns)*(c1-wsi(k))+ wi_ssl(ns)*wsi(k)
+            tau(k) =           (ki_mix    + kabs_chl(ns,k)) * dzk(k) * fs
+            w0 (k) = ki_mix/(ki_mix + kabs_chl(ns,k)) * wi_mix
             g  (k) = gi_dl(ns)
             ! int above lowest layer
             if (kii+2 <= klev-1) then
                do k = kii+2, klev-1
-                  tau(k) =            (ki_int(ns) + kabs_chl(ns,k)) * dzk(k)
-                  w0 (k) = ki_int(ns)/(ki_int(ns) + kabs_chl(ns,k)) * wi_int(ns)
+!                  tau(k) =            (ki_int(ns) + kabs_chl(ns,k)) * dzk(k)
+!                  w0 (k) = ki_int(ns)/(ki_int(ns) + kabs_chl(ns,k)) * wi_int(ns)
+                  ki_mix = ki_int(ns)*(c1-wsi(k))+ ki_ssl(ns)*wsi(k)
+                  wi_mix = wi_int(ns)*(c1-wsi(k))+ wi_ssl(ns)*wsi(k)
+                  tau(k) =           (ki_mix    + kabs_chl(ns,k)) * dzk(k) 
+                  w0 (k) = ki_mix/(ki_mix + kabs_chl(ns,k)) * wi_mix
                   g  (k) = gi_int(ns)
                enddo
             endif
@@ -2536,7 +2573,10 @@
                ! of kalg*0.50m, independent of actual layer thickness
                kabs = kabs + kabs_chl(ns,k)
             endif
-            sig    = ki_int(ns) * wi_int(ns)
+!            sig    = ki_int(ns) * wi_int(ns)
+            ki_mix = ki_int(ns)*(c1-wsi(k))+ ki_ssl(ns)*wsi(k)
+            wi_mix = wi_int(ns)*(c1-wsi(k))+ wi_ssl(ns)*wsi(k)
+            sig    = ki_mix * wi_mix
             tau(k) = (kabs+sig) * dzk(k)
             w0 (k) = sig/(sig+kabs)
             g  (k) = gi_int(ns)
@@ -3953,7 +3993,7 @@
                                         vsnon,    Tsfcn,     &
                                         alvln,    apndn,     &
                                         hpndn,    ipndn,     &
-                                        aeron,               &
+                                        hsnoicen, aeron,     &
                                         bgcNn,    zaeron,    &
                                         trcrn_bgcsw,         &
                                         TLAT,     TLON,      &
@@ -4030,6 +4070,7 @@
          apndn     , & ! pond area fraction
          hpndn     , & ! pond depth (m)
          ipndn     , & ! pond refrozen lid thickness (m)
+         hsnoicen  , & ! snow-ice layer depth (m) 
          fbri           ! brine fraction
 
       real(kind=dbl_kind), dimension(:,:), intent(in) :: &
@@ -4169,7 +4210,7 @@
                           vsnon,        Tsfcn,          &
                           alvln,        apndn,          &
                           hpndn,        ipndn,          &
-                          aeron,        &
+                          hsnoicen,     aeron,          &
                           trcrn_bgcsw,                  &
                           TLAT,         TLON,           &
                           calendar_type,days_per_year,  &
