@@ -314,8 +314,9 @@
                          !   1 = new formula giving round numbers
                          !   2 = WMO standard
                          !   3 = asymptotic formula
+
       logical (kind=log_kind), public :: &
-         landfast = .false.  ! if true, turn off reduce_area and lateral melt
+         landfast = .false.          ! if true, turn off reduce_area and lateral melt?
 
 !-----------------------------------------------------------------------
 ! Parameters for the floe size distribution
@@ -1746,8 +1747,8 @@
                             ! computed outside at 0C
          update_ocn_f_out   ! include fresh water and salt fluxes for frazil
 
-      logical(kind = log_kind), intent(out), optional :: &
-         landfast_out       ! treat ice as landfast (bare minimum area reduction)
+      logical (kind=log_kind), intent(out), optional :: &
+         landfast_out    ! treat ice as landfast (bare minimum area reduction)
          
       real (kind=dbl_kind), intent(out), optional :: &
          hi_min_out,  &      ! minimum ice thickness allowed (m) for thermo

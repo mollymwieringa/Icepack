@@ -344,7 +344,7 @@
                dhi = hi1 - hi0
                if (dhi < c0) then
                   hi1  = vicen / aicen
-                  if (.not. landfast) aicen = c2 * vicen / (hi1 + hi0)
+                  if (.not. landfast)    aicen = c2 * vicen / (hi1 + hi0)
                endif
             endif
 

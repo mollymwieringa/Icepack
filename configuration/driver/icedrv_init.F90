@@ -724,7 +724,7 @@
          write(nu_diag,1000) ' itd_area_min              = ', itd_area_min
          write(nu_diag,1000) ' itd_mass_min              = ', itd_mass_min
          write(nu_diag,1020) ' kitd                      = ', kitd
-         write(nu_diag,1020) ' landfast                  = ', landfast
+         write(nu_diag,1010) ' landfast                  = ', landfast
          write(nu_diag,1020) ' kcatbound                 = ', kcatbound
          write(nu_diag,1020) ' ndtd                      = ', ndtd
          write(nu_diag,1020) ' kstrength                 = ', kstrength
