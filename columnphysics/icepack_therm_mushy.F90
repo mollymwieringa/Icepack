@@ -3331,10 +3331,10 @@
                        snoice, fadvheat, &
                        HOSE, hoseice)   ! CMB for hosing 
 
-    ! given upwards flushing brine flow calculate amount of snow ice and
-    ! convert snow to ice with appropriate properties
+     ! given upwards flushing brine flow calculate amount of snow ice and
+     ! convert snow to ice with appropriate properties
 
-    real(kind=dbl_kind), intent(in) :: &
+     real(kind=dbl_kind), intent(in) :: &
          dt                , & ! time step (s)
          hsn               , & ! snow thickness (m)
          hin               , & ! ice thickness (m)
@@ -3342,7 +3342,7 @@
          qocn              , & ! ocean brine enthalpy (J m-3)
          HOSE                  ! CMB amnt to hose per step (m) 
 
-    real(kind=dbl_kind), dimension(:), intent(inout) :: &
+     real(kind=dbl_kind), dimension(:), intent(inout) :: &
          zqsn              , & ! snow layer enthalpy (J m-3)
          zqin              , & ! ice layer enthalpy (J m-3)
          zSin              , & ! ice layer bulk salinity (ppt)
@@ -3350,21 +3350,21 @@
          smice             , & ! ice mass tracer in snow (kg/m^3)
          smliq                 ! liquid water mass tracer in snow (kg/m^3)
 
-    real(kind=dbl_kind), dimension(:), intent(in) :: &
+     real(kind=dbl_kind), dimension(:), intent(in) :: &
          Sbr                   ! ice layer brine salinity (ppt)
 
-    real(kind=dbl_kind), intent(inout) :: &
+     real(kind=dbl_kind), intent(inout) :: &
          hslyr             , & ! snow layer thickness (m)
          hilyr                 ! ice layer thickness (m)
 
-    real(kind=dbl_kind), intent(out) :: &
+     real(kind=dbl_kind), intent(out) :: &
          snoice            , &  ! snow ice formation
          hoseice                ! CMB snow ice formation from hosing  
 
-   real(kind=dbl_kind), intent(inout) :: &
+     real(kind=dbl_kind), intent(inout) :: &
          fadvheat              ! advection heat flux to ocean
 
-    real(kind=dbl_kind) :: &
+     real(kind=dbl_kind) :: &
          hin2              , & ! new ice thickness (m)
          hsn2              , & ! new snow thickness (m)
          hilyr2            , & ! new ice layer thickness (m)
@@ -3384,19 +3384,19 @@
          wadded            , & ! mass rate of water used from ocean (kg/m^2/s)
          eadded                ! energy rate of water used from ocean (W/m^2)
 
-!   real(kind=dbl_kind) :: &
-!        sadded                ! salt rate of water used from ocean (kg/m^2/s)
+     ! real(kind=dbl_kind) :: &
+     !   sadded                ! salt rate of water used from ocean (kg/m^2/s)
 
-    integer :: &
+     integer :: &
          k                     ! vertical index
 
-    character(len=*),parameter :: subname='(flood_ice)'
+     character(len=*),parameter :: subname='(flood_ice)'
 
-    snoice = c0
-    hoseice=c0
+     snoice = c0
+     hoseice = c0
 
-    ! check we have snow
-    if (hsn > puny) then
+     ! check we have snow
+     if (hsn > puny) then
 
        rho_ocn = icepack_mushy_density_brine(sss)
 
@@ -3408,45 +3408,66 @@
        enddo ! k
        ice_mass = ice_mass * hilyr
 
-! for now, do not use variable snow density
-!       snow_mass = c0
-!       if (snwgrain) then
-!          do k = 1,nslyr
-!             snow_mass = snow_mass + (smice(k) + smliq(k)) * hslyr
-!          enddo
+       ! for now, do not use variable snow density
+       ! snow_mass = c0
+       ! if (snwgrain) then
+       !   do k = 1,nslyr
+       !      snow_mass = snow_mass + (smice(k) + smliq(k)) * hslyr
+       !   enddo
 
-!          ! negative freeboard times ocean density
-!          freeboard_density = max(ice_mass + snow_mass - hin * rho_ocn, c0) ! may not be BFB
+       !   ! negative freeboard times ocean density
+       !   freeboard_density = max(ice_mass + snow_mass - hin * rho_ocn, c0) ! may not be BFB
 
-!          if (freeboard_density > c0) then ! ice is flooded
-!             phi_snowice = (c1 - snow_mass / hsn / rhoi) ! sea ice fraction of newly formed snow-ice
-!             ! density of newly formed snowice
-!             ! use rhos instead of (c1-phi_snowice)*rhoi to conserve ice and liquid
-!             ! snow tracers when rhos = smice + smliq
-!             rho_snowice = phi_snowice * rho_ocn + (c1 - phi_snowice) * rhoi
-!          endif
-!       else
+       !   if (freeboard_density > c0) then ! ice is flooded
+       !      phi_snowice = (c1 - snow_mass / hsn / rhoi) ! sea ice fraction of newly formed snow-ice
+       !      ! density of newly formed snowice
+       !      ! use rhos instead of (c1-phi_snowice)*rhoi to conserve ice and liquid
+       !      ! snow tracers when rhos = smice + smliq
+       !      rho_snowice = phi_snowice * rho_ocn + (c1 - phi_snowice) * rhoi
+       !   endif
+       ! else
           ! snow_mass = rhos * hsn
           ! negative freeboard times ocean density
-         freeboard_density = max(ice_mass + hsn * rhos - hin * rho_ocn, c0)
-         if ((freeboard_density > c0) .or. (HOSE > c0)) then ! ice is flooded
-             phi_snowice = (c1 - rhos / rhoi) ! sea ice fraction of newly formed snow-ice
-             ! density of newly formed snow-ice
-             rho_snowice = phi_snowice * rho_ocn + (c1 - phi_snowice) * rhoi
+       freeboard_density = max(ice_mass + hsn * rhos - hin * rho_ocn, c0)
+       if ((freeboard_density > c0) .or. (HOSE > c0)) then ! ice is flooded
+          phi_snowice = (c1 - rhos / rhoi) ! sea ice fraction of newly formed snow-ice
+          ! density of newly formed snow-ice
+          rho_snowice = phi_snowice * rho_ocn + (c1 - phi_snowice) * rhoi
 
-             ! CMB comment above is poor, phi_snowice = snow porosity
-             ! CMB so (1-phi_snowice) is fraction of fresh ice within snow (where grains are)
-             ! CMB flooding fills up the pore space, fresh ice stays same
-             if (hsn>0.01) then ! tends to give NaNs when hsn is very thin
-                hoseice= HOSE/phi_snowice  ! CMB so hoseice > HOSE inflated by snow grains
-             endif
-         endif ! freeboard_density > c0
+          ! CMB comment above is poor, phi_snowice = snow porosity
+          ! CMB so (1-phi_snowice) is fraction of fresh ice within snow (where grains are)
+          ! CMB flooding fills up the pore space, fresh ice stays same
+          if (hsn>0.01) then ! tends to give NaNs when hsn is very thin
+             hoseice= HOSE/phi_snowice  ! CMB so hoseice > HOSE inflated by snow grains
+          endif
+       endif ! freeboard_density > c0
              !       endif ! snwgrain
 
-       if ((freeboard_density > c0) .or. (hoseice>c0)) then ! ice is flooded (CMB added hoseice)
+       if ((freeboard_density > c0) .or. (hoseice > c0)) then ! ice is flooded (CMB added hoseice)
+          ! MW note: the change in ice thickness is dh which includes both the snow ice formed due to lateral
+          ! flooding (natural) and the hose ice formed by artificial hosing (CMB). In most cases, the natural flooding
+          ! is 0, so dh = hoseice. The change in ice thickness is limited to the depth of the snow layer, creating scenarios
+          ! in which the amount of hoseice might be 'larger' than the change in thickness. This creates problems further on.
+          ! Physically, flooding is not necessarily limited to the snow depth. However, to change this would require a reworking
+          ! of the snow-ice formation. This could be done by not inflating HOSE by the snow porosity for the portion of hosing that
+          ! exceeds the snow depth. The dh could then include the non-inflated portion as just new ice addition.
 
           dh = freeboard_density / (rho_ocn - rho_snowice + rhos) + hoseice
           dh = max(min(dh,hsn),c0)
+          if (hoseice > dh) then
+               hoseice = dh - freeboard_density / (rho_ocn - rho_snowice + rhos) 
+          endif
+          ! MW note: the following is an attempt to start differentiating between snow and pure hose ice contributions. Doing it this way would require
+          ! accounting for the different enthalpies in layers, etc in a way that is not ready to be implemented yet. For now, we will cap the amount of
+          ! hoseice to be not greater than the change in ice thickness (assume that the lateral spread of liquid water prevents accumulation of pure 
+          ! sea water above the snow layer), above.
+          ! if (hoseice > dh) then
+          !      delta = hoseice - dh               ! difference between snow-depth capped dh and estimate hose ice (positive by conditional)
+          !      pure_hoseice = delta * phi_snowice ! estimate of pure ice added due to hosing (above snow-depth capped dh and 'uninflated' by snow porosity
+          !      snow_hoseice = hoseice - delta - freeboard_density / (rho_ocn - rho_snowice + rhos) ! ice created by hosing the snow layer (minus the freeboard-based sno ice formation)
+          !      hoseice = snow_hoseice + pure_hoseice ! update to hoseice tracer (accounts for snow layer hoseice and pure hoseice)
+          !      dh = dh + pure_hoseice ! update to change in ice thickness that includes pure hoseice (above the snow layer)
+          ! endif
 
           ! enthalpy of snow that becomes snow-ice
           call enthalpy_snow_snowice(dh, hsn, zqsn, zqsn_snowice)
@@ -3464,8 +3485,13 @@
           zqin_snowice = phi_snowice * qocn + zqsn_snowice
 
           ! change snow properties
-          call update_vertical_tracers_snow(zqsn, hslyr, hslyr2)
-          if (icepack_warnings_aborted(subname)) return
+          ! call update_vertical_tracers_snow(zqsn, hslyr, hslyr2)
+          if (hslyr2 > puny) then
+               call update_vertical_tracers_snow(zqsn, hslyr, hslyr2)
+               if (icepack_warnings_aborted(subname)) return
+          else
+               zqsn(:) = c0
+          endif
 
           if (snwgrain .and. hslyr2 > puny) then
              call update_vertical_tracers_snow(smice, hslyr, hslyr2)
@@ -3492,14 +3518,14 @@
           hadded = (dh * phi_snowice) / dt
           wadded = hadded * rhoi
           eadded = hadded * qocn
-!         sadded = wadded * ice_ref_salinity * p001
+          ! sadded = wadded * ice_ref_salinity * p001
 
           ! conservation
           fadvheat = fadvheat - eadded
 
        endif
 
-    endif
+     endif
 
   end subroutine flood_ice
 
