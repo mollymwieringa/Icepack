@@ -47,14 +47,14 @@
       use icedrv_state, only: aice, vice, vsno, uvel, vvel, divu, shear, strength
       use icedrv_state, only: trcr, trcrn
       use icedrv_state, only: aicen, vicen, vsnon
-      use icedrv_flux, only: evap, fsnow, frain, frazil
+      use icedrv_flux, only: evap, fsnow, frain, frazil, frzmlt
       use icedrv_flux, only: fswabs, flw, flwout, fsens, fsurf, flat
-      use icedrv_flux, only: Tair, Qa, fsw, fcondtop
+      use icedrv_flux, only: Tair, Qa, fsw, fcondtop, Tbot
       use icedrv_flux, only: meltt, meltb, meltl, melts, snoice, hoseice
       use icedrv_flux, only: dpnd_flushn, dpnd_exponn, dpnd_freebdn, dpnd_initialn, dpnd_dlidn
       use icedrv_flux, only: dpnd_flush, dpnd_expon, dpnd_freebd, dpnd_initial, dpnd_dlid
       use icedrv_flux, only: dpnd_melt, dpnd_ridge
-      use icedrv_flux, only: dsnow, congel, sst, sss, Tf, fhocn
+      use icedrv_flux, only: dsnow, congel, sst, sss, Tf, fhocn, fbot, fswthru
       use icedrv_arrays_column, only: d_afsd_newi, d_afsd_latg, d_afsd_latm, d_afsd_wave, d_afsd_weld
 #ifdef USE_NETCDF
       use netcdf
@@ -86,21 +86,21 @@
       real (kind=dbl_kind),allocatable :: &
          value1(:), value2(:,:), value3(:,:,:), value4(:,:,:,:)  ! temporary
 
-      integer (kind=dbl_kind), parameter :: num_2d = 34
+      integer (kind=dbl_kind), parameter :: num_2d = 38
       character(len=16), parameter :: fld_2d(num_2d) = &
          (/ 'aice            ', 'vice            ', 'vsno            ', &
             'uvel            ', 'vvel            ', 'divu            ', &
-            'shear           ', 'strength        ',                     &
+            'shear           ', 'strength        ', 'frzmlt          ', &
             'evap            ', 'fsnow           ', 'frazil          ', &
             'fswabs          ', 'flw             ', 'flwout          ', &
             'fsens           ', 'fsurf           ', 'flat            ', &
             'frain           ', 'Tair            ', 'Qa              ', &
             'fsw             ', 'fcondtop        ', 'meltt           ', &
             'meltb           ', 'meltl           ', 'snoice          ', &
-            'hoseice         ', &
+            'hoseice         ', 'fbot            ', 'fswthru         ', &
             'dsnow           ', 'congel          ', 'sst             ', &
             'sss             ', 'Tf              ', 'fhocn           ', &
-            'melts           ' /)
+            'melts           ', 'Tbot            '/)
 
       integer (kind=dbl_kind), parameter :: num_2d_pond = 10
       character(len=16), parameter :: fld_2d_pond(num_2d_pond) = &
@@ -126,7 +126,7 @@
 
       integer (kind=dbl_kind), parameter :: num_3d_snoice = 1
       character(len=16), parameter :: fld_3d_snoice(num_3d_snoice) = &
-         (/ 'snoice          ' /)
+         (/ 'hsnoice          ' /)
 
       integer (kind=dbl_kind), parameter :: num_3d_pond = 8
       character(len=16), parameter :: fld_3d_pond(num_3d_pond) = &
@@ -390,6 +390,10 @@
          if (trim(fld_2d(n)) == 'melts')    value2(1:count2(1),1) = melts(1:count2(1))
          if (trim(fld_2d(n)) == 'snoice')   value2(1:count2(1),1) = snoice(1:count2(1))
          if (trim(fld_2d(n)) == 'hoseice')  value2(1:count2(1),1) = hoseice(1:count2(1))
+         if (trim(fld_2d(n)) == 'fbot')     value2(1:count2(1),1) = fbot(1:count2(1))
+         if (trim(fld_2d(n)) == 'fswthru')  value2(1:count2(1),1) = fswthru(1:count2(1))
+         if (trim(fld_2d(n)) == 'frzmlt')   value2(1:count2(1),1) = frzmlt(1:count2(1))
+         if (trim(fld_2d(n)) == 'Tbot')     value2(1:count2(1),1) = Tbot(1:count2(1))
          if (trim(fld_2d(n)) == 'dsnow')    value2(1:count2(1),1) = dsnow(1:count2(1))
          if (trim(fld_2d(n)) == 'congel')   value2(1:count2(1),1) = congel(1:count2(1))
          if (trim(fld_2d(n)) == 'sst')      value2(1:count2(1),1) = sst(1:count2(1))
@@ -505,31 +509,6 @@
             deallocate(value3)
          enddo
       endif !tr_pnd
-
-      if (tr_sni) then 
-         call  icepack_query_tracer_indices(nt_hsnoice_out = nt_hsnoice)
-                  start3(1) = 1
-         count3(1) = nx
-         start3(2) = 1
-         count3(2) = ncat
-         start3(3) = timcnt
-         count3(3) = 1
-
-         do n = 1,num_3d_snoice
-            allocate(value3(count3(1),count3(2),1))
-
-            value3 = -9999._dbl_kind
-            if (trim(fld_3d_snoice(n)) == 'snoice') value3(1:count3(1),1:count3(2),1) = trcrn(1:count3(1),nt_hsnoice,1:count3(2))
-
-            status = nf90_inq_varid(ncid,trim(fld_3d_snoice(n)),varid)
-            if (status /= nf90_noerr) call icedrv_system_abort(string=subname//' ERROR: inq_var '//trim(fld_3d_snoice(n)))
-            status = nf90_put_var(ncid,varid,value3,start=start3,count=count3)
-            if (status /= nf90_noerr) call icedrv_system_abort(string=subname//' ERROR: put_var '//trim(fld_3d_snoice(n)))
-
-         deallocate(value3)
-         enddo
-
-      endif ! tr_sni
 
       if (tr_fsd) then
         ! 3d nfsd fields
