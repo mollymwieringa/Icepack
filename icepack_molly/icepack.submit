@@ -1,5 +1,0 @@
-#!/bin/csh -f 
-
-  ./icepack.run
-echo "`date` ${0}: icepack_molly job submitted"  >> /Users/kabo1917/icepack-dirs-2026/Icepack_2026/icepack_molly/README.case
-

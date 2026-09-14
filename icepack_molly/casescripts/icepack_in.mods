@@ -1,4 +1,0 @@
-# icepack.setup settings
-
-nprocs = 1
-data_dir = '/Users/kabo1917/icepack-dirs/input/Icepack_data/forcing'
