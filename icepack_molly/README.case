@@ -1,0 +1,6 @@
+Wed Sep  9 11:57:43 MDT 2026./icepack.setup --case icepack_molly --mach conda --env macos
+Wed Sep  9 11:57:44 MDT 2026./icepack.setup adding namelist modes set_env.col
+Wed Sep  9 11:57:44 MDT 2026./icepack.setup /Users/kabo1917/icepack-dirs-2026/Icepack_2026/configuration/scripts/options/set_[nml,env].UnDeFiNeD not found
+Wed Sep  9 11:59:42 MDT 2026 ./icepack.build:icepack_molly build completed icepack.bldlog.260909-115913
+Wed Sep  9 12:06:49 MDT 2026 ./icepack.run: icepack_molly run completed icepack.runlog.260909-120645
+Wed Sep  9 12:06:49 MDT 2026 ./icepack.submit: icepack_molly job submitted
