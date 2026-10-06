@@ -31,8 +31,8 @@
       public :: init_forcing, get_forcing, interp_coeff, &
                 interp_coeff_monthly, get_wave_spec
 
-      integer (kind=int_kind):: &
-         ntime        ! number of data points in time
+      integer (kind=int_kind) :: &
+         ntime      ! number of data points in time
 
       integer (kind=int_kind), public :: &
          ycycle          , & ! number of years in forcing cycle
@@ -137,7 +137,7 @@
             ' default ocean', file=__FILE__,line=__LINE__)
          ntime = npt
       else
-         ntime = 8760
+         ntime = 8760 * ycycle
       endif
       allocate(fsw_data(ntime), cldf_data(ntime), fsnow_data(ntime), &
                Tair_data(ntime), uatm_data(ntime), vatm_data(ntime), &
